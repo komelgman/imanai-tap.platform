@@ -1,0 +1,118 @@
+services:
+  alloy:
+    image: grafana/alloy:v1.11.3
+    container_name: alloy
+    ports:
+      - "12345:12345"
+      - "4318:4318"
+      - "4317:4317"
+    volumes:
+      - "./observability/alloy/config.alloy:/etc/alloy/config.alloy"
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command: [
+      "run",
+      "--server.http.listen-addr=0.0.0.0:12345",
+      "--stability.level=public-preview",
+      "/etc/alloy/config.alloy",
+    ]
+    depends_on:
+      - loki
+      - tempo
+      - mimir
+      - pyroscope
+    networks:
+      - obs-net
+
+  grafana:
+    image: grafana/grafana:12.2.1
+    container_name: grafana
+    volumes:
+      - "./observability/grafana/definitions:/var/lib/grafana/dashboards"
+      - "./observability/grafana/provisioning:/etc/grafana/provisioning"
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_FEATURE_TOGGLES_ENABLE=flameGraph traceqlSearch correlations traceQLStreaming metricsSummary traceqlEditor traceToMetrics traceToProfiles datatrails
+      - GF_INSTALL_PLUGINS=grafana-lokiexplore-app,grafana-exploretraces-app,grafana-pyroscope-app
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+    depends_on:
+      - alloy
+    networks:
+      - obs-net
+
+  tempo:
+    image: grafana/tempo:2.9.0
+    container_name: tempo
+    ports:
+      - "3200:3200"
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    volumes:
+      - "./observability/tempo.yaml:/etc/tempo.yaml"
+    networks:
+      - obs-net
+
+  loki:
+    image: grafana/loki:3.5.7
+    container_name: loki
+    ports:
+      - "3100:3100"
+    networks:
+      - obs-net
+
+  mimir:
+    image: grafana/mimir:3.0.0
+    container_name: mimir
+    hostname: mimir
+    command: ["-ingester.native-histograms-ingestion-enabled=true", "-config.file=/etc/mimir.yaml"]
+    ports:
+      - "9009:9009"
+    volumes:
+      - "./observability/mimir.yaml:/etc/mimir.yaml"
+    networks:
+      - obs-net
+  # sic! not configured yet to profile our containers
+  pyroscope:
+    image: grafana/pyroscope:1.16.0
+    container_name: pyroscope
+    ports:
+      - "4040:4040"
+    command: ["server"]
+    networks:
+      - obs-net
+
+# Project structure
+#
+# project-root
+# ├── platform
+# │   └── deployment
+# │       └── docker-compose
+# │           └── docker-compose.yml
+# ├── bounded-contexts
+# │   ├── mds.historical
+# │   │   ├── src
+# │   │   └── Dockerfile
+# │   └── ...
+# └── ...
+
+  mds-historical:
+    build:
+      context: ../../../bounded-contexts/mds.historical/
+      dockerfile: Dockerfile
+    container_name: mds-historical
+    labels:
+      service_type: application
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=compose
+      - ENV=compose
+      - OTLP_TRACING_ENDPOINT=http://alloy:4318/v1/traces
+      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
+    networks:
+      - obs-net
+
+networks:
+  obs-net:
+    driver: bridge

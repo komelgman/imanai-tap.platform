@@ -1,0 +1,163 @@
+logging {
+    level  = "debug"
+    format = "logfmt"
+}
+
+livedebugging {
+    enabled = true
+}
+
+discovery.docker "application_containers" {
+    host = "unix:///var/run/docker.sock"
+
+    filter {
+        name   = "label"
+        values = ["service_type=application"]
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Metrics scraping
+
+prometheus.scrape "application" {
+    targets = discovery.docker.application_containers.targets
+
+    metrics_path = "/actuator/prometheus"
+    scrape_interval = "15s"
+    scrape_timeout = "2s"
+
+    forward_to = [prometheus.remote_write.mimir.receiver]
+}
+
+prometheus.remote_write "mimir" {
+    endpoint {
+        url = "http://mimir:9009/api/v1/push"
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Logging
+
+discovery.relabel "application_containers" {
+    targets = discovery.docker.application_containers.targets
+
+    rule {
+        target_label = "container_name"
+        source_labels = ["__meta_docker_container_name"]
+        regex = "/(.*)"
+    }
+}
+
+loki.source.docker "application_containers" {
+    host             = "unix:///var/run/docker.sock"
+    targets          = discovery.relabel.application_containers.output
+    forward_to       = [loki.process.extract_fields.receiver]
+    labels           = {}
+    refresh_interval = "5s"
+}
+
+loki.process "extract_fields" {
+    forward_to = [loki.write.default.receiver]
+
+    stage.json {
+        expressions = {
+            timestamp       = `"@timestamp"`,
+            service         = "service",
+            service_version = "service_version",
+            environment     = "environment",
+            level           = "level",
+            logger          = "logger_name",
+            trace_id        = "traceId",
+            span_id         = "spanId",
+            message         = "message",
+            log = "",
+        }
+    }
+
+    stage.template {
+        source   = "message"
+        template = "{{ .logger }}: {{ .Value }}"
+    }
+
+    stage.template {
+        source   = "original_message"
+        template = "{{ .Entry }}"
+    }
+
+    stage.timestamp {
+        source = "timestamp"
+        format = "RFC3339Nano"
+    }
+
+    stage.template {
+        source   = "level"
+        template = "{{ ToLower .Value }}"
+    }
+
+    stage.labels {
+        values = {
+            service_name    = "service",
+            level           = "level",
+            logger          = "logger",
+        }
+    }
+
+    stage.structured_metadata {
+        values = {
+            service_version = "service_version",
+            trace_id        = "trace_id",
+            span_id         = "span_id",
+            log             = "log",
+            original_message   = "original_message",
+        }
+    }
+
+    stage.output {
+        source = "message"
+    }
+}
+
+loki.write "default" {
+    endpoint {
+        url = "http://loki:3100/loki/api/v1/push"
+    }
+    external_labels = {}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Tracing
+
+otelcol.receiver.otlp "otlp_receiver" {
+    grpc {
+        endpoint = "0.0.0.0:4317"
+    }
+    http {
+        endpoint = "0.0.0.0:4318"
+    }
+
+    output {
+        traces = [otelcol.exporter.otlp.tempo.input,]
+        metrics = [otelcol.processor.batch.metrics.input,]
+    }
+}
+
+otelcol.processor.batch "metrics" {
+  output {
+    metrics = [otelcol.exporter.prometheus.mimir.input]
+  }
+}
+
+otelcol.exporter.prometheus "mimir" {
+  forward_to = [prometheus.remote_write.mimir.receiver]
+}
+
+otelcol.exporter.otlp "tempo" {
+    client {
+        endpoint = "http://tempo:4317"
+
+        tls {
+            insecure = true
+            insecure_skip_verify = true
+        }
+    }
+}
