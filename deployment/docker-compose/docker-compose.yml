@@ -105,6 +105,7 @@ services:
       service_type: application
     ports:
       - "8080:8080"
+      - "15005:5005"
     environment:
       - SPRING_PROFILES_ACTIVE=compose
       - ENV=compose
