@@ -12,12 +12,13 @@ project-root
 │   ├── bootstrap                      # Scripts to initialize platform and clone services
 │   │   ├── .tools
 │   │   ├── /scripts/*
-│   │   └── main.sh / main.ps1         # Entry point for bootstrap
+│   │   └── main.ps1                   # Entry point for bootstrap
 │   │ 
 │   ├── deployment
 │   │   ├── helm                       # TBD
 │   │   └── docker-compose             # Local dev environment
 │   │       ├── observability          # Observability configuration 
+│   │       ├── scripts                # Compose management scripts
 │   │       └── docker-compose.yml
 │   │
 │   ├── docs
@@ -26,7 +27,9 @@ project-root
 │   │
 │   ├── infrastructure                 # TBD
 │   ├── platform-bom                   # Dependency management
-│   └── platform-config.yaml           # List of bootstrapped services
+│   ├── platform-config.yaml           # Config used by boostrap/compose scripts
+│   ├── compose-up.ps1                 # Start all services
+│   └── compose-down.ps1               # Stop all services
 │   
 ├── bounded-contexts                   # Business services
 │   ├── <some-service>
@@ -38,30 +41,29 @@ project-root
 ```
 
 ## Bootstrap
-Initializes platform structure and clones service repositories.
-
-**What it does:**
-- Creates `bounded-contexts` directories
-- Clones/updates services from `platform-config.yaml`
+Clones/updates services from `platform-config.yaml` to **bounded-contexts** directory.
 
 ### Usage
-~~**Linux:**~~ TBD
-```bash
-./bootstrap/main.sh
-```
-
 **Windows:**
 ```powershell
 ./bootstrap/main.ps1
 ```
 
+## Local Development
+### Start Services
+**Start all services:**
+```powershell
+./compose-up.ps1
+```
 
-## Current Status
-### Local Development
-Use provided scripts (compose-up, compose-down) to start/stop the local development cluster.
+**Rebuild specific services:**
+```powershell
+./compose-up.ps1 service1 service2
+```
+Rebuilds specified services with `--build --force-recreate`, starts the rest as-is.
 
-**Deployed via Docker Compose:**
-* **Observability stack**: Grafana Alloy, Grafana, Loki, Tempo, Mimir, Pyroscope (not yet configured)
-
-### Kubernetes
-Helm deployment: TBD
+### Stop Services
+**Stop all services and remove network:**
+```powershell
+./compose-down.ps1
+```
