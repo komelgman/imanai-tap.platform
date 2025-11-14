@@ -10,22 +10,20 @@ $env:DOCKER_BUILDKIT = "1"
 $BaseDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $BoundedContextsDir = yq ".platform.boundedContexts.dir" $ConfigFile
 $BoundedContextsPath = [IO.Path]::GetFullPath("$PlatformDir/$BoundedContextsDir")
-$PlatformComposeFile = "$PlatformDir/deployment/docker-compose/docker-compose.yml"
-
-Write-Host "[bounded-contexts-compose-up.ps1] Creating docker network..."
-& "$BaseDir/add-docker-network.ps1" $ConfigFile
-
-Write-Host "[bounded-contexts-compose-up.ps1] Launching platform compose: $PlatformComposeFile"
-& docker compose -f $PlatformComposeFile up -d --remove-orphans
 
 $AllServices = yq ".platform.boundedContexts.services[].name" $ConfigFile | ForEach-Object { $_.Trim() }
 
+if (-not $AllServices) {
+    Write-Host "[bounded-contexts-up.ps1:Error] No services found in config" -ForegroundColor Red
+    exit 1
+}
+
 if ($ServicesToBuild -and $ServicesToBuild.Count -gt 0) {
-    Write-Host "[bounded-contexts-compose-up.ps1] Rebuilding specific services: $($ServicesToBuild -join ', ')"
+    Write-Host "[bounded-contexts-up.ps1] Rebuilding specific services: $($ServicesToBuild -join ', ')"
 
     $InvalidServices = $ServicesToBuild | Where-Object { $AllServices -notcontains $_ }
     if ($InvalidServices) {
-        Write-Host "[bounded-contexts-compose-up.ps1:Warning] Services not found in config: $($InvalidServices -join ', ')" -ForegroundColor Yellow
+        Write-Host "[bounded-contexts-up.ps1:Error] Services not found in config: $($InvalidServices -join ', ')" -ForegroundColor Red
         exit 1
     }
 }
@@ -37,14 +35,21 @@ foreach ($svc in $AllServices) {
     if (Test-Path $ServiceComposeFile) {
         $shouldBuild = ($ServicesToBuild.Count -gt 0) -and ($ServicesToBuild -contains $svc)
 
-        Write-Host "[bounded-contexts-compose-up.ps1] Launching service compose: $ServiceComposeFile $(if ($shouldBuild) {'with rebuild'})"
+        Write-Host "[bounded-contexts-up.ps1] Launching service: $svc $(if ($shouldBuild) {'with rebuild'})"
 
         if ($shouldBuild) {
             & docker compose -f $ServiceComposeFile up -d --build --force-recreate --remove-orphans
         } else {
             & docker compose -f $ServiceComposeFile up -d --remove-orphans
         }
+
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "[bounded-contexts-up.ps1:Error] Failed to launch service '$svc'" -ForegroundColor Red
+            exit $LASTEXITCODE
+        }
     } else {
-        Write-Host "[bounded-contexts-compose-up.ps1:Warning] Compose file for service '$svc' not found at $ServiceComposeFile" -ForegroundColor Yellow
+        Write-Host "[bounded-contexts-up.ps1:Warning] Compose file for service '$svc' not found at $ServiceComposeFile" -ForegroundColor Yellow
     }
 }
+
+Write-Host "[bounded-contexts-up.ps1] All services launched successfully" -ForegroundColor Green
