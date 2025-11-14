@@ -8,5 +8,4 @@ $env:PATH = "$ToolsDir;$env:PATH"
 $ConfigFile = "$BaseDir/../platform-config.yaml"
 
 & "$BaseDir/scripts/bonded-contexts-checkout.ps1" $PlatformBaseDir $ConfigFile
-& "$BaseDir/scripts/add-docker-network.ps1" $PlatformBaseDir $ConfigFile
 
