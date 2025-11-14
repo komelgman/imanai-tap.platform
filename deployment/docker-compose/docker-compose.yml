@@ -21,7 +21,7 @@ services:
       - mimir
       - pyroscope
     networks:
-      - obs-net
+      - imanai-tap
 
   grafana:
     image: grafana/grafana:12.2.1
@@ -40,7 +40,7 @@ services:
     depends_on:
       - alloy
     networks:
-      - obs-net
+      - imanai-tap
 
   tempo:
     image: grafana/tempo:2.9.0
@@ -51,7 +51,7 @@ services:
     volumes:
       - "./observability/tempo.yaml:/etc/tempo.yaml"
     networks:
-      - obs-net
+      - imanai-tap
 
   loki:
     image: grafana/loki:3.5.7
@@ -59,7 +59,7 @@ services:
     ports:
       - "3100:3100"
     networks:
-      - obs-net
+      - imanai-tap
 
   mimir:
     image: grafana/mimir:3.0.0
@@ -71,7 +71,7 @@ services:
     volumes:
       - "./observability/mimir.yaml:/etc/mimir.yaml"
     networks:
-      - obs-net
+      - imanai-tap
   # sic! not configured yet to profile our containers
   pyroscope:
     image: grafana/pyroscope:1.16.0
@@ -80,40 +80,8 @@ services:
       - "4040:4040"
     command: ["server"]
     networks:
-      - obs-net
-
-# Project structure
-#
-# project-root
-# ├── platform
-# │   └── deployment
-# │       └── docker-compose
-# │           └── docker-compose.yml
-# ├── bounded-contexts
-# │   ├── mds.historical
-# │   │   ├── src
-# │   │   └── Dockerfile
-# │   └── ...
-# └── ...
-
-  mds-historical:
-    build:
-      context: ../../../bounded-contexts/mds.historical/
-      dockerfile: Dockerfile
-    container_name: mds-historical
-    labels:
-      service_type: application
-    ports:
-      - "8080:8080"
-      - "15005:5005"
-    environment:
-      - SPRING_PROFILES_ACTIVE=compose
-      - ENV=compose
-      - OTLP_TRACING_ENDPOINT=http://alloy:4318/v1/traces
-      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
-    networks:
-      - obs-net
+      - imanai-tap
 
 networks:
-  obs-net:
-    driver: bridge
+  imanai-tap:
+    external: true

@@ -1,0 +1,8 @@
+platform:
+  network:
+    name: imanai-tap
+  boundedContexts:
+    dir: "../bounded-contexts"
+    services:
+      - name: mds-historical
+        repo: "https://github.com/komelgman/imanai-tap.mds-historical.git"
