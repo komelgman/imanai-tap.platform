@@ -1,91 +1,67 @@
 # Platform Services
-
 This repository contains platform and infrastructure services shared across all bounded contexts of the project.
 
 ## Purpose
+- Centralized platform for developing and testing application services
+- Provides observability, configuration, authentication, API gateway, and other infrastructure components
 
-- Centralized platform for developing and testing application services.
-- Provides observability, configuration, authentication, API gateway, and other infrastructure components.
-
-## Current Status
-
-Currently, the **Observability stack** is deployed via Docker Compose:
-
-- Grafana Alloy
-- Grafana
-- Loki
-- Tempo
-- Mimir
-- Pyroscope _not configured yet_
-
-## Project structure
-
+## Project Structure
 ```
- project-root
- ├── platform                           -- This repo
- │   ├── bootstrap                      -- Scripts to initialize platform directories and clone services
- │   │   ├── .tools
- │   │   ├── /scripts/*
- │   │   ├── main.sh / main.ps1         -- Entry point for bootstrap, !sic .sh TBD
- │   │   └── platform-config.yaml       -- List of bostrapped services
- │   ├── deployment
- │   │   ├── helm                       -- TBD
- │   │   └── docker-compose             -- Local dev
- │   │       ├── observability          -- Observability configuaration 
- │   │       └── docker-compose.yml
- │   ├── docs
- │   │   ├── adr                        -- TBD
- │   │   └── diagrams                   -- TBD
- │   │
- │   ├── platform-bom                   -- Dependency management
- │   └── infrastructure                 -- TBD: infrastructure modules
- │   
- ├── bounded-contexts                   -- Folder for Business Services
- │   ├── mds.historical                 -- Business Service
- │   │   ├── src
- │   │   └── Dockerfile
- │   └── ...
- └── ...
+project-root
+├── platform                           # This repo
+│   ├── bootstrap                      # Scripts to initialize platform and clone services
+│   │   ├── .tools
+│   │   ├── /scripts/*
+│   │   └── main.sh / main.ps1         # Entry point for bootstrap
+│   │ 
+│   ├── deployment
+│   │   ├── helm                       # TBD
+│   │   └── docker-compose             # Local dev environment
+│   │       ├── observability          # Observability configuration 
+│   │       └── docker-compose.yml
+│   │
+│   ├── docs
+│   │   ├── adr                        # TBD
+│   │   └── diagrams                   # TBD
+│   │
+│   ├── infrastructure                 # TBD
+│   ├── platform-bom                   # Dependency management
+│   └── platform-config.yaml           # List of bootstrapped services
+│   
+├── bounded-contexts                   # Business services
+│   ├── <some-service>
+│   │   ├── src
+│   │   ├── Dockerfile 
+│   │   └── docker-compose.yml
+│   └── ...
+└── ...
 ```
-
-# Platform Services
-
-This repository contains platform and infrastructure services shared across all bounded contexts of the project.
-
-## Purpose
-
-* Centralized platform for developing and testing application services.
-* Provides observability, configuration, authentication, API gateway, and other infrastructure components.
-
-## Current Status
-
-Currently, the **Observability stack** is deployed via Docker Compose:
-
-* Grafana Alloy
-* Grafana
-* Loki
-* Tempo
-* Mimir
-* Pyroscope *not configured yet*
 
 ## Bootstrap
+Initializes platform structure and clones service repositories.
 
-The bootstrap module is responsible for initializing the platform structure and fetching required repositories automatically.
-
-* **Purpose:** 
-  * Prepare `bounded-contexts` directories and clone/update service repositories according to `platform-config.yaml`.
-  * Add docker network.
+**What it does:**
+- Creates `bounded-contexts` directories
+- Clones/updates services from `platform-config.yaml`
 
 ### Usage
-
-Linux:
-
+~~**Linux:**~~ TBD
 ```bash
 ./bootstrap/main.sh
 ```
 
-Windows:
-
+**Windows:**
 ```powershell
 ./bootstrap/main.ps1
 ```
+
+
+## Current Status
+### Local Development
+Use provided scripts (compose-up, compose-down) to start/stop the local development cluster.
+
+**Deployed via Docker Compose:**
+* **Observability stack**: Grafana Alloy, Grafana, Loki, Tempo, Mimir, Pyroscope (not yet configured)
+
+### Kubernetes
+Helm deployment: TBD

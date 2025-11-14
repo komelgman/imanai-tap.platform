@@ -72,7 +72,7 @@ services:
       - "./observability/mimir.yaml:/etc/mimir.yaml"
     networks:
       - imanai-tap
-  # sic! not configured yet to profile our containers
+  # sic! not configured yet to profiling our containers
   pyroscope:
     image: grafana/pyroscope:1.16.0
     container_name: pyroscope
