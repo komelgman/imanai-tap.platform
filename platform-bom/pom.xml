@@ -12,6 +12,7 @@
     <name>Platform BOM</name>
 
     <properties>
+        <java.version>25</java.version>
         <spring-boot.version>3.5.7</spring-boot.version>
     </properties>
 

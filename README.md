@@ -8,31 +8,31 @@ This repository contains platform and infrastructure services shared across all 
 ## Project Structure
 ```
 project-root
-├── platform                           # This repo
-│   ├── bootstrap                      # Scripts to initialize platform and clone services
+├── platform                            # This repo
+│   ├── bootstrap                       # Scripts to initialize platform and clone services
 │   │   ├── .tools
-│   │   ├── /scripts/*
-│   │   └── main.ps1                   # Entry point for bootstrap
+│   │   ├── scripts
+│   │   └── main.ps1                    # Entry point for bootstrap
 │   │ 
 │   ├── deployment
-│   │   ├── helm                       # TBD
-│   │   └── docker-compose             # Local dev environment
-│   │       ├── observability          # Observability configuration 
-│   │       ├── scripts                # Compose management scripts
-│   │       ├── data-platform.yml      # MQ, Cache, DB etc
+│   │   ├── helm                        # TBD
+│   │   └── docker-compose              # Local dev environment
+│   │       ├── observability           # Observability configuration 
+│   │       ├── scripts                 # Compose management scripts
+│   │       ├── data-platform.yml       # MQ, Cache, DB etc
 │   │       └── observability.yml
 │   │
 │   ├── docs
-│   │   ├── adr                        # TBD
-│   │   └── diagrams                   # TBD
+│   │   ├── adr                         # TBD
+│   │   └── diagrams                    # TBD
 │   │
-│   ├── infrastructure                 # TBD
-│   ├── platform-bom                   # Dependency management
-│   ├── platform-config.yaml           # Config used by boostrap/compose scripts
-│   ├── compose-up.ps1                 # Start all services
-│   └── compose-down.ps1               # Stop all services
+│   ├── infrastructure                  # TBD
+│   ├── platform-bom                    # Dependency management
+│   ├── platform-config.yaml            # Config used by boostrap/compose scripts
+│   ├── compose-up.ps1                  # Start all services
+│   └── compose-down.ps1                # Stop all services
 │   
-├── bounded-contexts                   # Business services
+├── bounded-contexts                    # Business services
 │   ├── <some-service>
 │   │   ├── src
 │   │   ├── Dockerfile 

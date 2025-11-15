@@ -14,8 +14,6 @@
     <description>Root POM for all custom Spring Boot Starters and Platform Services</description>
 
     <properties>
-        <java.version>25</java.version>
-
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
 
@@ -50,4 +48,12 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub Packages</name>
+            <url>https://maven.pkg.github.com/komelgman/imanai-tap.platform</url>
+        </repository>
+    </distributionManagement>
 </project>
