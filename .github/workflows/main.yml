@@ -1,0 +1,124 @@
+name: CI/CD Pipeline
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: write
+  packages: write
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      modules: ${{ steps.changes.outputs.modules }}
+      bom: ${{ steps.changes.outputs.bom }}
+      has_changes: ${{ steps.changes.outputs.has_changes }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: changes
+        run: |
+          BASE_SHA="${{ github.event.before }}"
+          if [[ "$BASE_SHA" == "0000000000000000000000000000000000000000" ]]; then
+            BASE_SHA="HEAD~1"
+          fi
+          
+          CHANGED=$(git diff --name-only "$BASE_SHA" HEAD 2>/dev/null || git diff --name-only HEAD~1 HEAD)
+          
+          # Detect all changed modules with metadata
+          MODULES="[]"
+          
+          for dir in platform-services/*/; do
+            module=$(basename "$dir")
+            if echo "$CHANGED" | grep -q "^platform-services/$module/"; then
+              HAS_DOCKERFILE="false"
+              [ -f "$dir/Dockerfile" ] && HAS_DOCKERFILE="true"
+          
+              # Add to modules array with metadata
+              MODULE_JSON=$(jq -n \
+                --arg name "$module" \
+                --arg type "$([ "$HAS_DOCKERFILE" = "true" ] && echo "service" || echo "library")" \
+                --argjson has_dockerfile "$HAS_DOCKERFILE" \
+                '{name: $name, type: $type, has_dockerfile: $has_dockerfile}')
+          
+              MODULES=$(echo "$MODULES" | jq --argjson item "$MODULE_JSON" '. += [$item]')          
+            fi
+          done
+          
+          # Detect BOM changes
+          BOM="false"
+          if echo "$CHANGED" | grep -q '^platform-bom/'; then
+            BOM="true"
+          fi
+                   
+          echo "modules=$MODULES" >> $GITHUB_OUTPUT
+          echo "bom=$BOM" >> $GITHUB_OUTPUT
+          
+          if [ "$MODULES" != "[]" ] || [ "$BOM" = "true" ]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          fi
+          
+          echo "Modules: $MODULES"
+          echo "BOM: $BOM"
+
+  qa:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has_changes == 'true'
+    uses: ./.github/workflows/qa.yml
+    with:
+      modules: ${{ needs.detect-changes.outputs.modules }}
+      bom: ${{ needs.detect-changes.outputs.bom }}
+
+  version-bump:
+    needs: [ detect-changes, qa ]
+    if: |
+      needs.detect-changes.outputs.has_changes == 'true' && 
+      github.event_name == 'push' && 
+      github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/version-bump.yml
+    with:
+      modules: ${{ needs.detect-changes.outputs.modules }}
+      bom: ${{ needs.detect-changes.outputs.bom }}
+    secrets: inherit
+
+  build-artifacts:
+    needs: [ detect-changes, qa, version-bump ]
+    if: |
+      needs.detect-changes.outputs.modules != '[]' &&
+      github.event_name == 'push' && 
+      github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/build-artifacts.yml
+    with:
+      modules: ${{ needs.detect-changes.outputs.modules }}
+    secrets: inherit
+
+  summary:
+    needs: [ detect-changes, qa, version-bump, build-artifacts ]
+    if: needs.detect-changes.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+          ## Pipeline Summary
+          
+          **Modules:** ${{ needs.detect-changes.outputs.modules }}
+          **BOM Changed:** ${{ needs.detect-changes.outputs.bom }}
+          
+          ### Job Status
+          - QA: ${{ needs.qa.result }}
+          - Version Bump: ${{ needs.version-bump.result }}
+          - Build Artifacts: ${{ needs.build-artifacts.result }}
+          EOF

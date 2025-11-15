@@ -1,0 +1,125 @@
+name: Version Bump
+on:
+  workflow_call:
+    inputs:
+      modules:
+        required: true
+        type: string
+      bom:
+        required: true
+        type: string
+
+jobs:
+  bump-versions:
+    runs-on: ubuntu-latest
+    outputs:
+      versions: ${{ steps.bump.outputs.versions }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+
+      - name: Bump all versions
+        id: bump
+        run: |
+          set -euo pipefail
+          
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          BASE_SHA="${{ github.event.before }}"
+          if [[ "$BASE_SHA" == "0000000000000000000000000000000000000000" ]]; then
+            BASE_SHA="HEAD~1"
+          fi
+          
+          VERSIONS_JSON="{"
+          
+          # Process all modules
+          MODULES='${{ inputs.modules }}'
+          for row in $(echo "$MODULES" | jq -r '.[] | @base64'); do
+            _jq() {
+              echo "$row" | base64 --decode | jq -r "$1"
+            }
+          
+            MODULE_NAME=$(_jq '.name')
+            MODULE_TYPE=$(_jq '.type')
+          
+            POM="platform-services/$MODULE_NAME/pom.xml"
+          
+            OLD=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout -f "$POM")
+          
+            TYPE="patch"
+            while IFS= read -r msg; do
+              if echo "$msg" | grep -qE 'BREAKING[[:space:]]CHANGE|^(feat|fix|refactor|perf|chore)!:'; then
+                TYPE="major"
+                break
+              elif echo "$msg" | grep -qE '^feat(\([^)]*\))?:'; then
+                [ "$TYPE" != "major" ] && TYPE="minor"
+              fi
+            done < <(git log --format=%s --reverse "$BASE_SHA"..HEAD -- "platform-services/$MODULE_NAME/" || true)
+          
+            OLD_CLEAN=$(echo "$OLD" | sed 's/-SNAPSHOT//')
+            IFS='.' read -r M m p <<< "$OLD_CLEAN"
+            M=${M:-0}; m=${m:-0}; p=${p:-0}
+          
+            case $TYPE in
+              major) NEW="$((M+1)).0.0" ;;
+              minor) NEW="$M.$((m+1)).0" ;;
+              *)     NEW="$M.$m.$((p+1))" ;;
+            esac
+          
+            echo "Bumping $MODULE_NAME ($MODULE_TYPE): $OLD -> $NEW"
+            mvn versions:set -DnewVersion="$NEW" -DgenerateBackupPoms=false -f "$POM" -q
+          
+            git add "$POM"
+            git commit -m "chore(release): $MODULE_NAME v$NEW [skip ci]"
+            git tag -a "$MODULE_NAME-v$NEW" -m "Release $MODULE_NAME v$NEW"
+          
+            VERSIONS_JSON="$VERSIONS_JSON\"$MODULE_NAME\":\"$NEW\","
+          done
+          
+          # Process BOM
+          if [ "${{ inputs.bom }}" = "true" ]; then
+            POM="platform-bom/pom.xml"
+            OLD=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout -f "$POM")
+          
+            OLD_CLEAN=$(echo "$OLD" | sed 's/-SNAPSHOT//')
+            IFS='.' read -r M m p <<< "$OLD_CLEAN"
+            NEW="$M.$m.$((p+1))"
+          
+            echo "Bumping BOM: $OLD -> $NEW"
+            mvn versions:set -DnewVersion="$NEW" -DgenerateBackupPoms=false -f "$POM" -q
+          
+            git add "$POM"
+            git commit -m "chore(release): BOM v$NEW [skip ci]"
+            git tag -a "bom-v$NEW" -m "Release BOM v$NEW"
+          
+            VERSIONS_JSON="$VERSIONS_JSON\"bom\":\"$NEW\","
+          fi
+          
+          VERSIONS_JSON="${VERSIONS_JSON%,}}"
+          echo "versions=$VERSIONS_JSON" >> $GITHUB_OUTPUT
+
+      - name: Push changes
+        run: |
+          MAX_RETRIES=3
+          for i in $(seq 1 $MAX_RETRIES); do
+            if [ $i -gt 1 ]; then
+              git pull --rebase origin main || git rebase --skip
+              sleep $((i * 2))
+            fi
+          
+            if git push origin main && git push origin --tags; then
+              echo "Successfully pushed"
+              exit 0
+            fi
+          done
+          
+          echo "Failed to push after $MAX_RETRIES attempts"
+          exit 1
