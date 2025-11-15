@@ -7,7 +7,6 @@ param(
 
 $env:DOCKER_BUILDKIT = "1"
 
-$BaseDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $BoundedContextsDir = yq ".platform.boundedContexts.dir" $ConfigFile
 $BoundedContextsPath = [IO.Path]::GetFullPath("$PlatformDir/$BoundedContextsDir")
 
@@ -38,9 +37,9 @@ foreach ($svc in $AllServices) {
         Write-Host "[bounded-contexts-up.ps1] Launching service: $svc $(if ($shouldBuild) {'with rebuild'})"
 
         if ($shouldBuild) {
-            & docker compose -f $ServiceComposeFile up -d --build --force-recreate --remove-orphans
+            & docker compose -f $ServiceComposeFile up -d --build --force-recreate
         } else {
-            & docker compose -f $ServiceComposeFile up -d --remove-orphans
+            & docker compose -f $ServiceComposeFile up -d
         }
 
         if ($LASTEXITCODE -ne 0) {

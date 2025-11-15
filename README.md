@@ -19,7 +19,8 @@ project-root
 │   │   └── docker-compose             # Local dev environment
 │   │       ├── observability          # Observability configuration 
 │   │       ├── scripts                # Compose management scripts
-│   │       └── docker-compose.yml
+│   │       ├── data-platform.yml      # MQ, Cache, DB etc
+│   │       └── observability.yml
 │   │
 │   ├── docs
 │   │   ├── adr                        # TBD
@@ -51,12 +52,12 @@ Clones/updates services from `platform-config.yaml` to **bounded-contexts** dire
 
 ## Local Development
 ### Start Services
-**Start all services:**
+**Create network and start all services:**
 ```powershell
 ./compose-up.ps1
 ```
 
-**Rebuild specific services:**
+**Create network and rebuild specific (business) services:**
 ```powershell
 ./compose-up.ps1 service1 service2
 ```

@@ -3,6 +3,7 @@ platform:
     name: imanai-tap
   infra:
     observability: ./deployment/docker-compose/observability.yml
+    data-platform: ./deployment/docker-compose/data-platform.yml
   boundedContexts:
     dir: "../bounded-contexts"
     services:
