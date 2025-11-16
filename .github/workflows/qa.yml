@@ -78,20 +78,20 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Cache Maven
+      - name: Cache Maven Dependencies
         uses: actions/cache@v4
         with:
           path: ~/.m2/repository
           key: maven-${{ hashFiles('**/pom.xml') }}
 
-      - name: Cache Dependency-Check DB
+      - name: Cache OWASP Dependency-Check Database
         uses: actions/cache@v4
         with:
-          path: ~/.m2/repository/org/owasp/dependency-check-data
-          key: depcheck-${{ hashFiles('**/pom.xml') }}
+          path: ~/.dependency-check
+          key: depcheck-db-${{ github.run_id }}
 
-      - name: OWASP Dependency Check
-        run: mvn dependency-check:check -B -DautoUpdate=false
+      - name: Run OWASP Dependency Check
+        run: mvn dependency-check:check -B
         continue-on-error: true
 
       - name: Upload Dependency-Check Report
