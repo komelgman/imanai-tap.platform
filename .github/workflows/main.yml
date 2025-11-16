@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       modules: ${{ steps.changes.outputs.modules }}
-      bom: ${{ steps.changes.outputs.bom }}
+      parent_pom: ${{ steps.changes.outputs.parent_pom }}
       has_changes: ${{ steps.changes.outputs.has_changes }}
     steps:
       - uses: actions/checkout@v4
@@ -55,31 +55,29 @@ jobs:
             fi
           done
 
-          # Detect BOM changes
-          BOM="false"
-          if echo "$CHANGED" | grep -q '^platform-bom/'; then
-            BOM="true"
+          # Detect parent pom changes
+          PARENT_POM="false"
+          if echo "$CHANGED" | grep -qE '^pom\.xml$'; then
+            PARENT_POM="true"
           fi
 
           echo "modules=$MODULES" >> $GITHUB_OUTPUT
-          echo "bom=$BOM" >> $GITHUB_OUTPUT
+          echo "parent_pom=$PARENT_POM" >> $GITHUB_OUTPUT
 
-          if [ "$MODULES" != "[]" ] || [ "$BOM" = "true" ]; then
+          if [ "$MODULES" != "[]" ] || [ "$PARENT_POM" = "true" ]; then
             echo "has_changes=true" >> $GITHUB_OUTPUT
           else
             echo "has_changes=false" >> $GITHUB_OUTPUT
           fi
 
           echo "Modules: $MODULES"
-          echo "BOM: $BOM"
-
+          echo "Parent POM: $PARENT_POM"
   qa:
     needs: detect-changes
     if: needs.detect-changes.outputs.has_changes == 'true'
     uses: ./.github/workflows/qa.yml
     with:
       modules: ${{ needs.detect-changes.outputs.modules }}
-      bom: ${{ needs.detect-changes.outputs.bom }}
 
   version-bump:
     needs: [ detect-changes, qa ]
@@ -90,7 +88,17 @@ jobs:
     uses: ./.github/workflows/version-bump.yml
     with:
       modules: ${{ needs.detect-changes.outputs.modules }}
-      bom: ${{ needs.detect-changes.outputs.bom }}
+      parent_pom: ${{ needs.detect-changes.outputs.parent_pom }}
+    secrets: inherit
+
+  publish-parent:
+    needs: [ detect-changes, qa, version-bump ]
+    if: needs.detect-changes.outputs.parent_pom == 'true' &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/publish-parent-pom.yml
+    with:
+      parent_pom_changed: true
     secrets: inherit
 
   build-artifacts:
@@ -115,7 +123,7 @@ jobs:
           ## Pipeline Summary
 
           **Modules:** ${{ needs.detect-changes.outputs.modules }}
-          **BOM Changed:** ${{ needs.detect-changes.outputs.bom }}
+          **Parent POM Changed:** ${{ needs.detect-changes.outputs.parent_pom }}
 
           ### Job Status
           - QA: ${{ needs.qa.result }}

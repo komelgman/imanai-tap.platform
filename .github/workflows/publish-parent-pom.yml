@@ -1,0 +1,58 @@
+name: Publish Parent POM
+on:
+  workflow_call:
+    inputs:
+      parent_pom_changed:
+        required: true
+        type: boolean
+
+jobs:
+  publish-parent:
+    if: inputs.parent_pom_changed == true
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: maven-parent-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            maven-parent-
+
+      - name: Get parent POM version
+        id: version
+        run: |
+          # Extract version from parent pom.xml
+          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout -f pom.xml)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Parent POM version: $VERSION"
+
+      - name: Deploy parent POM to GitHub Packages
+        env:
+          MAVEN_USERNAME: ${{ github.actor }}
+          MAVEN_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Deploying parent POM version ${{ steps.version.outputs.version }}"
+          mvn -B clean deploy -N \
+            -f pom.xml \
+            -s .github/workflows/settings.xml \
+            -DskipTests \
+            -Dmaven.install.skip=true
+
+      - name: Create artifact summary
+        run: |
+          echo "## Parent POM Published" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Artifact**: \`com.company:parent-pom:${{ steps.version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Repository**: GitHub Packages" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY

@@ -14,18 +14,29 @@
   <description>Root POM for all custom Spring Boot Starters and Platform Services</description>
 
   <properties>
+    <java.version>25</java.version>
     <maven.compiler.source>${java.version}</maven.compiler.source>
     <maven.compiler.target>${java.version}</maven.compiler.target>
-
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+    <spring-boot.version>3.5.7</spring-boot.version>
+    <logstash-logback-encoder.version>8.0</logstash-logback-encoder.version>
+
+    <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
+    <checkstyle.version>12.1.2</checkstyle.version>
+    <versions-maven-plugin.version>2.18.0</versions-maven-plugin.version>
+    <dependency-check-maven.version>12.1.9</dependency-check-maven.version>
   </properties>
 
-  <modules>
-    <module>platform-bom</module>
-  </modules>
-
   <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>versions-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+
     <pluginManagement>
       <plugins>
         <plugin>
@@ -35,9 +46,18 @@
         </plugin>
 
         <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>versions-maven-plugin</artifactId>
+          <version>${versions-maven-plugin.version}</version>
+          <configuration>
+            <generateBackupPoms>false</generateBackupPoms>
+          </configuration>
+        </plugin>
+
+        <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-checkstyle-plugin</artifactId>
-          <version>3.6.0</version>
+          <version>${maven-checkstyle-plugin.version}</version>
 
           <configuration>
             <configLocation>google_checks.xml</configLocation>
@@ -53,9 +73,40 @@
             <dependency>
               <groupId>com.puppycrawl.tools</groupId>
               <artifactId>checkstyle</artifactId>
-              <version>12.1.1</version>
+              <version>${checkstyle.version}</version>
             </dependency>
           </dependencies>
+        </plugin>
+
+        <plugin>
+          <groupId>org.owasp</groupId>
+          <artifactId>dependency-check-maven</artifactId>
+          <version>${dependency-check-maven.version}</version>
+
+          <configuration>
+            <failBuildOnCVSS>7</failBuildOnCVSS>
+            <skipProvidedScope>true</skipProvidedScope>
+            <skipRuntimeScope>false</skipRuntimeScope>
+            <skipTestScope>false</skipTestScope>
+
+            <outputDirectory>${project.build.directory}</outputDirectory>
+            <formats>
+              <format>HTML</format>
+            </formats>
+
+            <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
+            <nodeAnalyzerEnabled>false</nodeAnalyzerEnabled>
+
+            <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
+            <nodeAnalyzerEnabled>false</nodeAnalyzerEnabled>
+            <pyDistributionAnalyzerEnabled>false</pyDistributionAnalyzerEnabled>
+            <pyPackageAnalyzerEnabled>false</pyPackageAnalyzerEnabled>
+            <rubygemsAnalyzerEnabled>false</rubygemsAnalyzerEnabled>
+            <cocoapodsAnalyzerEnabled>false</cocoapodsAnalyzerEnabled>
+            <swiftPackageManagerAnalyzerEnabled>false</swiftPackageManagerAnalyzerEnabled>
+
+            <centralAnalyzerUseCache>true</centralAnalyzerUseCache>
+          </configuration>
         </plugin>
       </plugins>
     </pluginManagement>
@@ -64,11 +115,17 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>io.github.komelgman.tap</groupId>
-        <artifactId>platform-bom</artifactId>
-        <version>${project.version}</version>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-dependencies</artifactId>
+        <version>${spring-boot.version}</version>
         <type>pom</type>
         <scope>import</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>net.logstash.logback</groupId>
+        <artifactId>logstash-logback-encoder</artifactId>
+        <version>${logstash-logback-encoder.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

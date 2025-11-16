@@ -5,7 +5,7 @@ on:
       modules:
         required: true
         type: string
-      bom:
+      parent_pom:
         required: true
         type: string
 
@@ -29,31 +29,31 @@ jobs:
         id: bump
         run: |
           set -euo pipefail
-          
+
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
+
           BASE_SHA="${{ github.event.before }}"
           if [[ "$BASE_SHA" == "0000000000000000000000000000000000000000" ]]; then
             BASE_SHA="HEAD~1"
           fi
-          
+
           VERSIONS_JSON="{"
-          
+
           # Process all modules
           MODULES='${{ inputs.modules }}'
           for row in $(echo "$MODULES" | jq -r '.[] | @base64'); do
             _jq() {
               echo "$row" | base64 --decode | jq -r "$1"
             }
-          
+
             MODULE_NAME=$(_jq '.name')
             MODULE_TYPE=$(_jq '.type')
-          
+
             POM="platform-services/$MODULE_NAME/pom.xml"
-          
+
             OLD=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout -f "$POM")
-          
+
             TYPE="patch"
             while IFS= read -r msg; do
               if echo "$msg" | grep -qE 'BREAKING[[:space:]]CHANGE|^(feat|fix|refactor|perf|chore)!:'; then
@@ -63,46 +63,46 @@ jobs:
                 [ "$TYPE" != "major" ] && TYPE="minor"
               fi
             done < <(git log --format=%s --reverse "$BASE_SHA"..HEAD -- "platform-services/$MODULE_NAME/" || true)
-          
+
             OLD_CLEAN=$(echo "$OLD" | sed 's/-SNAPSHOT//')
             IFS='.' read -r M m p <<< "$OLD_CLEAN"
             M=${M:-0}; m=${m:-0}; p=${p:-0}
-          
+
             case $TYPE in
               major) NEW="$((M+1)).0.0" ;;
               minor) NEW="$M.$((m+1)).0" ;;
               *)     NEW="$M.$m.$((p+1))" ;;
             esac
-          
+
             echo "Bumping $MODULE_NAME ($MODULE_TYPE): $OLD -> $NEW"
             mvn versions:set -DnewVersion="$NEW" -DgenerateBackupPoms=false -f "$POM" -q
-          
+
             git add "$POM"
             git commit -m "chore(release): $MODULE_NAME v$NEW [skip ci]"
-            git tag -a "$MODULE_NAME-v$NEW" -m "Release $MODULE_NAME v$NEW"
-          
+            # git tag -a "$MODULE_NAME-v$NEW" -m "Release $MODULE_NAME v$NEW"
+
             VERSIONS_JSON="$VERSIONS_JSON\"$MODULE_NAME\":\"$NEW\","
           done
-          
-          # Process BOM
-          if [ "${{ inputs.bom }}" = "true" ]; then
-            POM="platform-bom/pom.xml"
+
+          # Process Parent POM
+          if [ "${{ inputs.parent_pom }}" = "true" ]; then
+            POM="./pom.xml"
             OLD=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout -f "$POM")
-          
+
             OLD_CLEAN=$(echo "$OLD" | sed 's/-SNAPSHOT//')
             IFS='.' read -r M m p <<< "$OLD_CLEAN"
             NEW="$M.$m.$((p+1))"
-          
-            echo "Bumping BOM: $OLD -> $NEW"
+
+            echo "Bumping Parent POM: $OLD -> $NEW"
             mvn versions:set -DnewVersion="$NEW" -DgenerateBackupPoms=false -f "$POM" -q
-          
+
             git add "$POM"
-            git commit -m "chore(release): BOM v$NEW [skip ci]"
-            git tag -a "bom-v$NEW" -m "Release BOM v$NEW"
-          
-            VERSIONS_JSON="$VERSIONS_JSON\"bom\":\"$NEW\","
+            git commit -m "chore(release): Parent POM v$NEW [skip ci]"
+            # git tag -a "bom-v$NEW" -m "Release BOM v$NEW"
+
+            VERSIONS_JSON="$VERSIONS_JSON\"parent_pom\":\"$NEW\","
           fi
-          
+
           VERSIONS_JSON="${VERSIONS_JSON%,}}"
           echo "versions=$VERSIONS_JSON" >> $GITHUB_OUTPUT
 
@@ -114,12 +114,12 @@ jobs:
               git pull --rebase origin main || git rebase --skip
               sleep $((i * 2))
             fi
-          
+
             if git push origin main && git push origin --tags; then
               echo "Successfully pushed"
               exit 0
             fi
           done
-          
+
           echo "Failed to push after $MAX_RETRIES attempts"
           exit 1

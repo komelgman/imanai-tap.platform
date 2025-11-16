@@ -30,8 +30,7 @@ project-root
 │   │   ├── adr 
 │   │   └── diagrams                    # TBD
 │   │
-│   ├── infrastructure                  # TBD
-│   ├── platform-bom                    # Dependency management
+│   ├── platform-services               # TBD
 │   ├── platform-config.yaml            # Config used by boostrap/compose scripts
 │   ├── compose-up.ps1                  # Start all services
 │   └── compose-down.ps1                # Stop all services
