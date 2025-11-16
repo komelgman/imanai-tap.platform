@@ -9,6 +9,7 @@ This repository contains platform and infrastructure services shared across all 
 ```
 project-root
 ├── platform                            # This repo
+│   ├── .github                         # CI workflows
 │   ├── bootstrap                       # Scripts to initialize platform and clone services
 │   │   ├── .tools
 │   │   ├── scripts
@@ -23,7 +24,7 @@ project-root
 │   │       └── observability.yml
 │   │
 │   ├── docs
-│   │   ├── adr                         # TBD
+│   │   ├── adr 
 │   │   └── diagrams                    # TBD
 │   │
 │   ├── infrastructure                  # TBD
@@ -41,23 +42,20 @@ project-root
 └── ...
 ```
 
-## Bootstrap
+## Local Development
+### Bootstrap
 Clones/updates services from `platform-config.yaml` to **bounded-contexts** directory.
-
-### Usage
-**Windows:**
 ```powershell
 ./bootstrap/main.ps1
 ```
 
-## Local Development
 ### Start Services
 **Create network and start all services:**
 ```powershell
 ./compose-up.ps1
 ```
 
-**Create network and rebuild specific (business) services:**
+**To rebuild specific (business) services use:**
 ```powershell
 ./compose-up.ps1 service1 service2
 ```
