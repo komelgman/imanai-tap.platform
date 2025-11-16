@@ -49,7 +49,8 @@ project-root
 
 ### Bootstrap
 
-Clones/updates services from `platform-config.yaml` to **bounded-contexts** directory.
+* Clones/updates services from `platform-config.yaml` to **bounded-contexts** directory;
+* Install pre-commit hooks.
 
 ```powershell
 ./bootstrap/main.ps1

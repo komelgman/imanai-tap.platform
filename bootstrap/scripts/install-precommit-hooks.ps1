@@ -1,4 +1,14 @@
-$YqVersion = "v4.43.1"
-$ScriptsDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$ToolsDir = "$ScriptsDir/../.tools"
+param(
+    [string]$PlatformBaseDir
+)
 
+$HooksDir = "$PlatformBaseDir/.github/hooks"
+
+if (-not (Test-Path $HooksDir -PathType Container)) {
+    Write-Error "[install-precommit-hooks.ps1:error] '$HooksDir' not found."
+    exit 1
+}
+
+git config core.hooksPath $HooksDir
+
+Write-Host "Git hooks configured via core.hooksPath" -ForegroundColor Green

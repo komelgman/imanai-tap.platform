@@ -1,0 +1,21 @@
+#!/bin/sh
+
+if git diff --cached --quiet --exit-code; then
+    echo "[pre-commit hook] ✅ No changes found. Skip Checkstyle."
+    exit 0
+fi
+
+BASE_DIR=`$(git rev-parse --show-toplevel)`
+cd "`$BASE_DIR`"
+
+echo "[pre-commit hook] ⚠️ Running code style checks..."
+./mvnw -q --batch-mode checkstyle:check >/dev/null 2>/dev/null
+
+EXIT_CODE=$?
+if [ $EXIT_CODE -ne 0 ]; then
+    echo "[pre-commit hook: Error] ❌ Checkstyle violations found. Run './mvnw checkstyle:check' to see details."
+    exit 1
+fi
+
+echo "[pre-commit hook] ✅ Checkstyle passed."
+exit 0
