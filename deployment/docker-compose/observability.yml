@@ -67,7 +67,7 @@ services:
     image: grafana/mimir:3.0.0
     container_name: mimir
     hostname: mimir
-    command: ["-ingester.native-histograms-ingestion-enabled=true", "-config.file=/etc/mimir.yaml"]
+    command: [ "-ingester.native-histograms-ingestion-enabled=true", "-config.file=/etc/mimir.yaml" ]
     ports:
       - "9009:9009"
     volumes:
@@ -80,7 +80,7 @@ services:
     container_name: pyroscope
     ports:
       - "4040:4040"
-    command: ["server"]
+    command: [ "server" ]
     networks:
       - imanai-tap
 

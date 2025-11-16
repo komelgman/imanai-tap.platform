@@ -11,9 +11,9 @@ server:
 
 # The distributor receives incoming trace span data for the system.
 distributor:
-  receivers:             # This configuration will listen on all ports and protocols that tempo is capable of.
-    jaeger:              # The receivers all come from the OpenTelemetry collector.  More configuration information can
-      protocols:         # be found there: https://github.com/open-telemetry/opentelemetry-collector/tree/main/receiver
+  receivers: # This configuration will listen on all ports and protocols that tempo is capable of.
+    jaeger: # The receivers all come from the OpenTelemetry collector.  More configuration information can
+      protocols: # be found there: https://github.com/open-telemetry/opentelemetry-collector/tree/main/receiver
         thrift_http:     #
         grpc:            # For a production deployment you should only enable the receivers you need!
         thrift_binary:   # Note that from Tempo 2.7.0, if an endpoint if not specified, it will listen only on localhost.
@@ -103,5 +103,5 @@ metrics_generator:
 overrides:
   defaults:
     metrics_generator:
-      processors: [service-graphs, span-metrics, local-blocks] # enables metrics generator
+      processors: [ service-graphs, span-metrics, local-blocks ] # enables metrics generator
       generate_native_histograms: both

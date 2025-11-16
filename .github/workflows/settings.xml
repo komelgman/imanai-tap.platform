@@ -3,11 +3,11 @@
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.1
                               https://maven.apache.org/xsd/settings-1.2.1.xsd">
-    <servers>
-        <server>
-            <id>github</id>
-            <username>${env.MAVEN_USERNAME}</username>
-            <password>${env.MAVEN_PASSWORD}</password>
-        </server>
-    </servers>
+  <servers>
+    <server>
+      <id>github</id>
+      <username>${env.MAVEN_USERNAME}</username>
+      <password>${env.MAVEN_PASSWORD}</password>
+    </server>
+  </servers>
 </settings>

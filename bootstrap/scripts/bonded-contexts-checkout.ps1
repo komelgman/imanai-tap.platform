@@ -8,7 +8,8 @@ $BoundedContextsFullPath = [IO.Path]::GetFullPath("$PlatformDir/$BoundedContexts
 $Services = yq ".platform.boundedContexts.services[].name" $ConfigFile | ForEach-Object { $_.Trim() }
 
 $BaseDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-foreach ($svc in $Services) {
+foreach ($svc in $Services)
+{
     Write-Host "[bounded-contexts-checkout.ps1] checkout '$svc'..."
     $RepoFilter = ".platform.boundedContexts.services[] | select(.name == \`"$svc\`") | .repo"
     $Repo = yq $RepoFilter $ConfigFile

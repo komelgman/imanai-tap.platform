@@ -1,11 +1,14 @@
 # Platform Services
+
 This repository contains platform and infrastructure services shared across all bounded contexts of the project.
 
 ## Purpose
+
 - Centralized platform for developing and testing application services
 - Provides observability, configuration, authentication, API gateway, and other infrastructure components
 
 ## Project Structure
+
 ```
 project-root
 ├── platform                            # This repo
@@ -43,26 +46,35 @@ project-root
 ```
 
 ## Local Development
+
 ### Bootstrap
+
 Clones/updates services from `platform-config.yaml` to **bounded-contexts** directory.
+
 ```powershell
 ./bootstrap/main.ps1
 ```
 
 ### Start Services
+
 **Create network and start all services:**
+
 ```powershell
 ./compose-up.ps1
 ```
 
 **To rebuild specific (business) services use:**
+
 ```powershell
 ./compose-up.ps1 service1 service2
 ```
+
 Rebuilds specified services with `--build --force-recreate`, starts the rest as-is.
 
 ### Stop Services
+
 **Stop all services and remove network:**
+
 ```powershell
 ./compose-down.ps1
 ```

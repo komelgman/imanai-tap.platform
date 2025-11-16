@@ -9,8 +9,11 @@ Write-Host "[checkout.ps1] Repository = $Repo"
 Write-Host "[checkout.ps1] TargetDir = $TargetDir"
 
 $ServicePath = Join-Path $TargetDir $ServiceName
-if (-not (Test-Path "$ServicePath/.git")) {
+if (-not (Test-Path "$ServicePath/.git"))
+{
     git clone $Repo $ServicePath
-} else {
+}
+else
+{
     git -C $ServicePath pull
 }
