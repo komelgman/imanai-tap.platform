@@ -14,7 +14,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
+
+      - name: Verify version (debug)
+        run: |
+          echo "Last commit:"
+          git log -1 --oneline
+          echo "Current version:"
+          mvn help:evaluate -Dexpression=project.version -q -DforceStdout
 
       - uses: actions/setup-java@v4
         with:
