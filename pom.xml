@@ -20,13 +20,17 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-    <spring-boot.version>3.5.7</spring-boot.version>
-    <logstash-logback-encoder.version>8.0</logstash-logback-encoder.version>
-
+    <!-- Plugin Versions -->
     <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
     <checkstyle.version>12.1.2</checkstyle.version>
     <versions-maven-plugin.version>2.18.0</versions-maven-plugin.version>
     <dependency-check-maven.version>12.1.9</dependency-check-maven.version>
+    <jacoco-maven-plugin.version>0.8.13</jacoco-maven-plugin.version>
+    <sonar-maven-plugin.version>5.2.0.4988</sonar-maven-plugin.version>
+
+    <!-- Dependencies Versions -->
+    <spring-boot.version>3.5.7</spring-boot.version>
+    <logstash-logback-encoder.version>8.0</logstash-logback-encoder.version>
   </properties>
 
   <build>
@@ -43,6 +47,11 @@
           <groupId>org.springframework.boot</groupId>
           <artifactId>spring-boot-maven-plugin</artifactId>
           <version>${spring-boot.version}</version>
+
+          <configuration>
+            <layers enabled="true"/>
+            <finalName>application</finalName>
+          </configuration>
         </plugin>
 
         <plugin>
@@ -76,6 +85,42 @@
               <version>${checkstyle.version}</version>
             </dependency>
           </dependencies>
+        </plugin>
+
+        <plugin>
+          <groupId>org.jacoco</groupId>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <version>${jacoco-maven-plugin.version}</version>
+          <executions>
+            <execution>
+              <id>prepare-agent</id>
+              <goals>
+                <goal>prepare-agent</goal>
+              </goals>
+              <phase>initialize</phase>
+            </execution>
+
+            <execution>
+              <id>report</id>
+              <goals>
+                <goal>report</goal>
+              </goals>
+
+              <phase>verify</phase>
+
+              <configuration>
+                <formats>
+                  <format>XML</format>
+                </formats>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+
+        <plugin>
+          <groupId>org.sonarsource.scanner.maven</groupId>
+          <artifactId>sonar-maven-plugin</artifactId>
+          <version>${sonar-maven-plugin.version}</version>
         </plugin>
       </plugins>
     </pluginManagement>
