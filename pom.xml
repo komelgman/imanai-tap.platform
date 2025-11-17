@@ -24,7 +24,7 @@
     <logstash-logback-encoder.version>8.0</logstash-logback-encoder.version>
 
     <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
-    <checkstyle.version>12.1.2</checkstyle.version>
+    <checkstyle.version>12.1.1</checkstyle.version>
     <versions-maven-plugin.version>2.18.0</versions-maven-plugin.version>
     <dependency-check-maven.version>12.1.9</dependency-check-maven.version>
   </properties>
