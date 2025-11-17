@@ -12,7 +12,7 @@ This repository contains platform and infrastructure services shared across all 
 ```
 project-root
 ├── platform                            # This repo
-│   ├── .github                         # CI workflows
+│   ├── .github                         # CI workflows and hooks
 │   ├── bootstrap                       # Scripts to initialize platform and clone services
 │   │   ├── .tools
 │   │   ├── scripts
@@ -45,6 +45,31 @@ project-root
 ```
 
 ## Local Development
+
+### Credentials for GitHub Packages
+
+## IDE Configuration for GitHub Packages
+
+To enable your IDE to download project dependencies from GitHub Packages, configure your local Maven settings:
+
+### 1. Configure Maven Settings
+
+Add the following server configuration to your `settings.xml` file (located at `~/.m2/settings.xml`):
+
+```xml
+<server>
+  <id>github-tap-platform</id>
+  <username>${env.GITHUB_USERNAME}</username>
+  <password>${env.GITHUB_PAT}</password>
+</server>
+```
+
+### 2. Set Environment Variables
+
+Define the following environment variables in your system:
+
+- `GITHUB_USERNAME` — your GitHub username
+- `GITHUB_PAT` — a [Personal Access Token](https://github.com/settings/tokens) with `read:packages` scope
 
 ### Bootstrap
 
