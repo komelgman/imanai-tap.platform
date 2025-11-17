@@ -68,6 +68,7 @@ jobs:
 
   github-codeql:
     runs-on: ubuntu-latest
+    if: ${{ inputs.modules != '[]' }}
     permissions:
       security-events: write
       contents: read
