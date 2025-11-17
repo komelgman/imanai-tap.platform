@@ -7,7 +7,7 @@
 
   <groupId>io.github.komelgman.tap</groupId>
   <artifactId>platform-parent</artifactId>
-  <version>1.0.2</version>
+  <version>1.0.3</version>
   <packaging>pom</packaging>
 
   <name>Platform Services and Starters</name>
