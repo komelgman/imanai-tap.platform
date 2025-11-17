@@ -17,13 +17,6 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Verify version (debug)
-        run: |
-          echo "Last commit:"
-          git log -1 --oneline
-          echo "Current version:"
-          mvn help:evaluate -Dexpression=project.version -q -DforceStdout
-
       - uses: actions/setup-java@v4
         with:
           java-version: '25'
@@ -36,31 +29,30 @@ jobs:
           restore-keys: |
             maven-parent-
 
-      - name: Get parent POM version
-        id: version
+      - name: Extract POM info
+        id: pom-info
         run: |
-          # Extract version from parent pom.xml
+          GROUP_ID=$(mvn help:evaluate -Dexpression=project.groupId -q -DforceStdout -f pom.xml)
+          ARTIFACT_ID=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout -f pom.xml)
           VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout -f pom.xml)
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Parent POM version: $VERSION"
 
       - name: Deploy parent POM to GitHub Packages
         env:
           MAVEN_USERNAME: ${{ github.actor }}
           MAVEN_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Deploying parent POM version ${{ steps.version.outputs.version }}"
+          echo "Deploying \`${{ steps.pom-info.outputs.group_id }}:${{ steps.pom-info.outputs.artifact_id }}:${{ steps.pom-info.outputs.version }}\`"
           mvn -B clean deploy -N \
             -f pom.xml \
             -s .github/workflows/settings.xml \
             -DskipTests \
             -Dmaven.install.skip=true
 
-      - name: Create artifact summary
+      - name: Generate summary
         run: |
           echo "## Parent POM Published" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Version**: ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Artifact**: \`com.company:parent-pom:${{ steps.version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **Repository**: GitHub Packages" >> $GITHUB_STEP_SUMMARY
-          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: ${{ steps.pom-info.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Artifact**: \`${{ steps.pom-info.outputs.group_id }}:${{ steps.pom-info.outputs.artifact_id }}:${{ steps.pom-info.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Repository**: [GitHub Packages](https://github.com/${{ github.repository }}/packages)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: [\`${GITHUB_SHA:0:7}\`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})" >> $GITHUB_STEP_SUMMARY

@@ -1,13 +1,62 @@
 #!/bin/sh
 
+# Pre-commit hook:
+# - prevent simultaneous commit of changes in the root pom.xml and any service.
+# - checkstyle validation
+
+set -e
+
+# Define the root pom file path and the services directory
+ROOT_POM="pom.xml"
+SERVICES_DIR="platform-services"
+
+# Check if there are any staged changes
 if git diff --cached --quiet --exit-code; then
-    echo "[pre-commit hook] ✅ No changes found. Skip Checkstyle."
+    echo "[pre-commit hook] ✅ No changes found. Skipping checks."
     exit 0
 fi
 
-BASE_DIR=`$(git rev-parse --show-toplevel)`
-cd "`$BASE_DIR`"
+# Get the list of staged files (files added to the index for commit)
+STAGED_FILES=$(git diff --cached --name-only)
 
+# --- 1. Check for staged changes in the root pom.xml ---
+ROOT_POM_CHANGED=0
+if echo "$STAGED_FILES" | grep -q "^$ROOT_POM$"; then
+    ROOT_POM_CHANGED=1
+fi
+
+# --- 2. Check for staged changes in any service directory ---
+SERVICE_FILES_CHANGED=0
+if echo "$STAGED_FILES" | grep -q "^$SERVICES_DIR/"; then
+    SERVICE_FILES_CHANGED=1
+fi
+
+# --- 3. Enforcement Logic ---
+# If both the root pom and service files are staged for commit, block the commit.
+if [ $ROOT_POM_CHANGED -eq 1 ] && [ $SERVICE_FILES_CHANGED -eq 1 ]; then
+    echo ""
+    echo "[pre-commit hook: Error] 🛑 **CRITICAL BUILD WARNING: Simultaneous Commit Detected**"
+    echo ""
+    echo "You are attempting to commit changes in both the **Root/Parent pom.xml** ($ROOT_POM)"
+    echo "and files within the **Service directory** ($SERVICES_DIR/) at the same time."
+    echo ""
+    echo "To maintain build stability and version consistency, you must commit these changes separately:"
+    echo "* **First:** Commit and push the changes to the **Root/Parent pom.xml** ONLY."
+    echo "* **Second:** Pull the new parent version, update the service dependencies (if needed),"
+    echo "    and then commit the service changes with the updated version."
+    echo ""
+    echo "❗ **IMPORTANT:** The hook will not automatically update the Parent POM version in your service."
+    echo "Please unstage the service files or the root pom and try again."
+    echo ""
+    exit 1
+fi
+
+# --- 4. Proceed with Checkstyle ---
+
+BASE_DIR=$(git rev-parse --show-toplevel)
+cd "$BASE_DIR"
+
+# TODO: staged only
 echo "[pre-commit hook] ⚠️ Running code style checks..."
 ./mvnw -q --batch-mode checkstyle:check >/dev/null 2>/dev/null
 
