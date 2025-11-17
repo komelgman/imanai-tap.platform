@@ -9,6 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    if: ${{ inputs.modules != '[]' }}
     strategy:
       matrix:
         module: ${{ fromJson(inputs.modules) }}

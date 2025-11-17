@@ -31,6 +31,7 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    if: ${{ inputs.modules != '[]' }}
     strategy:
       matrix:
         module: ${{ fromJson(inputs.modules) }}
@@ -65,8 +66,12 @@ jobs:
           path: platform-services/${{ matrix.module.name }}/target/site/jacoco/
           retention-days: 7
 
-  security-scan:
+  github-codeql:
     runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -78,26 +83,22 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Cache Maven Dependencies
+      - name: Cache Maven
         uses: actions/cache@v4
         with:
           path: ~/.m2/repository
           key: maven-${{ hashFiles('**/pom.xml') }}
 
-      - name: Cache OWASP Dependency-Check Database
-        uses: actions/cache@v4
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
         with:
-          path: ~/.dependency-check
-          key: depcheck-db-${{ github.run_id }}
+          languages: java-kotlin
+          queries: security-and-quality
 
-      - name: Run OWASP Dependency Check
-        run: mvn dependency-check:check -B
-        continue-on-error: true
+      - name: Build project
+        run: mvn -B compile -DskipTests
 
-      - name: Upload Dependency-Check Report
-        if: always()
-        uses: actions/upload-artifact@v4
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
         with:
-          name: dependency-check-report
-          path: target/dependency-check-report.html
-          retention-days: 7
+          category: "/language:java-kotlin"

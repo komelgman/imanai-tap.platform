@@ -24,7 +24,7 @@
     <logstash-logback-encoder.version>8.0</logstash-logback-encoder.version>
 
     <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
-    <checkstyle.version>12.1.1</checkstyle.version>
+    <checkstyle.version>12.1.2</checkstyle.version>
     <versions-maven-plugin.version>2.18.0</versions-maven-plugin.version>
     <dependency-check-maven.version>12.1.9</dependency-check-maven.version>
   </properties>
@@ -76,37 +76,6 @@
               <version>${checkstyle.version}</version>
             </dependency>
           </dependencies>
-        </plugin>
-
-        <plugin>
-          <groupId>org.owasp</groupId>
-          <artifactId>dependency-check-maven</artifactId>
-          <version>${dependency-check-maven.version}</version>
-
-          <configuration>
-            <failBuildOnCVSS>7</failBuildOnCVSS>
-            <skipProvidedScope>true</skipProvidedScope>
-            <skipRuntimeScope>false</skipRuntimeScope>
-            <skipTestScope>false</skipTestScope>
-
-            <outputDirectory>${project.build.directory}</outputDirectory>
-            <formats>
-              <format>HTML</format>
-            </formats>
-
-            <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
-            <nodeAnalyzerEnabled>false</nodeAnalyzerEnabled>
-
-            <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
-            <nodeAnalyzerEnabled>false</nodeAnalyzerEnabled>
-            <pyDistributionAnalyzerEnabled>false</pyDistributionAnalyzerEnabled>
-            <pyPackageAnalyzerEnabled>false</pyPackageAnalyzerEnabled>
-            <rubygemsAnalyzerEnabled>false</rubygemsAnalyzerEnabled>
-            <cocoapodsAnalyzerEnabled>false</cocoapodsAnalyzerEnabled>
-            <swiftPackageManagerAnalyzerEnabled>false</swiftPackageManagerAnalyzerEnabled>
-
-            <centralAnalyzerUseCache>true</centralAnalyzerUseCache>
-          </configuration>
         </plugin>
       </plugins>
     </pluginManagement>
