@@ -59,8 +59,8 @@ Add the following server configuration to your `settings.xml` file (located at `
 ```xml
 <server>
   <id>github-tap-platform</id>
-  <username>${env.GITHUB_USERNAME}</username>
-  <password>${env.GITHUB_PAT}</password>
+  <username>${env.GH_USERNAME}</username>
+  <password>${env.GH_PACKAGES_READ_TOKEN}</password>
 </server>
 ```
 
@@ -68,8 +68,8 @@ Add the following server configuration to your `settings.xml` file (located at `
 
 Define the following environment variables in your system:
 
-- `GITHUB_USERNAME` — your GitHub username
-- `GITHUB_PAT` — a [Personal Access Token](https://github.com/settings/tokens) with `read:packages` scope
+- `GH_USERNAME` — your GitHub username
+- `GH_PACKAGES_READ_TOKEN` — a [Personal Access Token](https://github.com/settings/tokens) with `read:packages` scope
 
 ### Bootstrap
 
