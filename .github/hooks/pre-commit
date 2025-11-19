@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Pre-commit hook:
-# - prevent simultaneous commit of changes in the root pom.xml and any service.
+# - prevent simultaneous commit of changes in the root pom.xml and any platform service.
 # - checkstyle validation
 
 set -e

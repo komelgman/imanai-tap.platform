@@ -13,7 +13,7 @@ This repository contains platform and infrastructure services shared across all 
 project-root
 ├── platform                            # This repo
 │   ├── .github                         # CI workflows and hooks
-│   ├── bootstrap                       # Scripts to initialize platform and clone services
+│   ├── bootstrap                       # Scripts to initialize platform
 │   │   ├── .tools
 │   │   ├── scripts
 │   │   └── main.ps1                    # Entry point for bootstrap
@@ -37,8 +37,9 @@ project-root
 │   
 ├── bounded-contexts                    # Business services
 │   ├── <some-service>
+│   │   ├── bootstrap                   # [Optional]
 │   │   ├── src
-│   │   ├── Dockerfile 
+│   │   ├── Dockerfile
 │   │   └── docker-compose.yml
 │   └── ...
 └── ...
@@ -46,13 +47,19 @@ project-root
 
 ## Local Development
 
+### Prerequisites
+
+Ensure the following tools are installed on your system:
+
+- Git - version control system
+- Docker - container platform
+- Docker Compose - multi-container orchestration tool
+
 ### Credentials for GitHub Packages
 
-## IDE Configuration for GitHub Packages
+To enable your local maven to download project dependencies from GitHub Packages:
 
-To enable your IDE to download project dependencies from GitHub Packages, configure your local Maven settings:
-
-### 1. Configure Maven Settings
+#### 1. Configure Maven Settings 
 
 Add the following server configuration to your `settings.xml` file (located at `~/.m2/settings.xml`):
 
@@ -64,17 +71,17 @@ Add the following server configuration to your `settings.xml` file (located at `
 </server>
 ```
 
-### 2. Set Environment Variables
+#### 2. Set Environment Variables
 
-Define the following environment variables in your system:
+Define the following environment variables in your system, used by local Maven and docker compose, to build services:
 
 - `GH_USERNAME` — your GitHub username
 - `GH_PACKAGES_READ_TOKEN` — a [Personal Access Token](https://github.com/settings/tokens) with `read:packages` scope
 
 ### Bootstrap
 
-* Clones/updates services from `platform-config.yaml` to **bounded-contexts** directory;
-* Install pre-commit hooks.
+- Install git hooks
+- Clones/updates services from `platform-config.yaml` to **bounded-contexts** directory
 
 ```powershell
 ./bootstrap/main.ps1
@@ -88,7 +95,7 @@ Define the following environment variables in your system:
 ./compose-up.ps1
 ```
 
-**To rebuild specific (business) services use:**
+**To rebuild specific services use:**
 
 ```powershell
 ./compose-up.ps1 service1 service2
