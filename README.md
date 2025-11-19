@@ -7,6 +7,19 @@ This repository contains platform and infrastructure services shared across all 
 - Centralized platform for developing and testing application services
 - Provides observability, configuration, authentication, API gateway, and other infrastructure components
 
+## Documentation
+Platform architecture and infrastructure documentation is maintained using [Structurizr Site Generator](https://github.com/avisi-cloud/structurizr-site-generatr) and automatically published to GitHub Pages.
+
+### Source Files
+- Documentation source: [`/docs`](./docs)
+- Main workspace definition: [`/docs/workspace.dsl`](./docs/workspace.dsl)
+
+### Generated Documentation
+Interactive diagrams and documentation are available at:  
+**https://komelgman.github.io/imanai-tap.platform/**
+
+The documentation site is automatically regenerated on every push to `main` when files in `/docs` are modified.
+
 ## Project Structure
 
 ```
@@ -26,9 +39,7 @@ project-root
 │   │       ├── data-platform.yml       # MQ, Cache, DB etc
 │   │       └── observability.yml
 │   │
-│   ├── docs
-│   │   ├── adr 
-│   │   └── diagrams                    # TBD
+│   ├── docs                            # TBD, generic example at now
 │   │
 │   ├── platform-services               # TBD
 │   ├── platform-config.yaml            # Config used by boostrap/compose scripts

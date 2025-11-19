@@ -1,0 +1,65 @@
+name: Deploy Structurizr documentation to GitHub Pages
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "docs/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/avisi-cloud/structurizr-site-generatr:1.5.2
+      options: --user root
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate static site from DSL
+        run: |
+          /opt/structurizr-site-generatr/bin/structurizr-site-generatr generate-site \
+            -w docs/workspace.dsl \
+            -o build/site
+
+      - name: Upload generated site
+        uses: actions/upload-artifact@v4
+        with:
+          name: structurizr-site
+          path: build/site
+          retention-days: 1
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Download generated site
+        uses: actions/download-artifact@v4
+        with:
+          name: structurizr-site
+          path: site
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload to GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
