@@ -18,7 +18,7 @@ try {
     foreach ($svc in $Services) {
         Write-Host "[bounded-contexts-checkout.ps1] Checking out '$svc'..."
 
-        $RepoFilter = ".platform.boundedContexts.services[] | select(.name == `"$svc\`") | .repo"
+        $RepoFilter = ".platform.boundedContexts.services[] | select(.name == \`"$svc\`") | .repo"
         $Repo = yq $RepoFilter $ConfigFile
 
         & "$BaseDir/checkout.ps1" $svc $Repo $BoundedContextsFullPath
