@@ -21,6 +21,7 @@ buildNumber.properties
 .settings/
 .vscode/
 bin/
+.structurizr/
 
 # Logs
 *.log

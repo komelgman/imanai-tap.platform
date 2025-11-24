@@ -1,10 +1,4 @@
-/*
- * This is a combined version of the following workspaces:
- *
- * - "Big Bank plc - System Landscape" (https://structurizr.com/share/28201/)
- * - "Big Bank plc - Internet Banking System" (https://structurizr.com/share/36141/)
-*/
-workspace "Big Bank plc" "This is an example workspace to illustrate the key features of Structurizr, via the DSL, based around a fictional online banking system." {
+workspace "Imanai TAP" "Trading Analytics Portal" {
     !docs workspace-docs
     !adrs workspace-adrs
 
@@ -13,175 +7,97 @@ workspace "Big Bank plc" "This is an example workspace to illustrate the key fea
             "structurizr.groupSeparator" "/"
         }
 
-        customer = person "Personal Banking Customer" "A customer of the bank, with personal bank accounts." "Customer"
-
-        acquirer = softwaresystem "Acquirer" "Facilitates PIN transactions for merchants." "External System"
-
-        group "Big Bank plc" {
-            supportStaff = person "Customer Service Staff" "Customer service staff within the bank." "Bank Staff" {
-                properties {
-                    "Location" "Customer Services"
-                }
+        archetypes {
+            sync = -> {
+                tags "Synchronous"
             }
-            backoffice = person "Back Office Staff" "Administration and support staff within the bank." "Bank Staff" {
-                properties {
-                    "Location" "Internal Services"
-                }
+            https = --sync-> {
+                technology "HTTPS"
             }
-
-            mainframe = softwaresystem "Mainframe Banking System" "Stores all of the core banking information about customers, accounts, transactions, etc." "Existing System"
-            email = softwaresystem "E-mail System" "The internal Microsoft Exchange e-mail system." "Existing System"
-            atm = softwaresystem "ATM" "Allows customers to withdraw cash." "Existing System"
-
-            internetBankingSystem = softwaresystem "Internet Banking System" "Allows customers to view information about their bank accounts, and make payments." {
-                !adrs internet-banking-system/adr
-                !docs internet-banking-system/docs
-                properties {
-                    "Owner" "Customer Services"
-                    "Development Team" "Dev/Internet Services"
-                }
-                url https://en.wikipedia.org/wiki/Online_banking
-
-                singlePageApplication = container "Single-Page Application" "Provides all of the Internet banking functionality to customers via their web browser." "JavaScript and Angular" "Web Browser"
-                mobileApp = container "Mobile App" "Provides a limited subset of the Internet banking functionality to customers via their mobile device." "Xamarin" "Mobile App"
-                webApplication = container "Web Application" "Delivers the static content and the Internet banking single page application." "Java and Spring MVC"
-                apiApplication = container "API Application" "Provides Internet banking functionality via a JSON/HTTPS API." "Java and Spring MVC" {
-                    properties {
-                        Owner "Team 1"
-                    }
-                    signinController = component "Sign In Controller" "Allows users to sign in to the Internet Banking System." "Spring MVC Rest Controller"
-                    accountsSummaryController = component "Accounts Summary Controller" "Provides customers with a summary of their bank accounts." "Spring MVC Rest Controller"
-                    resetPasswordController = component "Reset Password Controller" "Allows users to reset their passwords with a single use URL." "Spring MVC Rest Controller"
-                    securityComponent = component "Security Component" "Provides functionality related to signing in, changing passwords, etc." "Spring Bean"
-                    mainframeBankingSystemFacade = component "Mainframe Banking System Facade" "A facade onto the mainframe banking system." "Spring Bean" {
-                        !adrs internet-banking-system/api-application/mainframe-banking-system-facade/adr
-                        !docs internet-banking-system/api-application/mainframe-banking-system-facade/docs
-                    }
-                    emailComponent = component "E-mail Component" "Sends e-mails to users." "Spring Bean" {
-                        !adrs internet-banking-system/api-application/email-component/adr
-                        !docs internet-banking-system/api-application/email-component/docs
-                    }
-                }
-                database = container "Database" "Stores user registration information, hashed authentication credentials, access logs, etc." "Oracle Database Schema" "Database"
+            gRPC = --sync-> {
+                technology "gRPC"
+            }
+            websocket = --sync-> {
+                technology "Websocket"
+            }
+            async = -> {
+                tags "Asynchronous"
+            }
+            eventBus = --async-> {
+                technology "Kafka/Redis Streams"
+            }
+            stream = --async-> {
+                technology "Kafka Streams etc"
             }
         }
 
-        # relationships between people and software systems
-        customer -> internetBankingSystem "Views account balances, and makes payments using"
-        internetBankingSystem -> mainframe "Gets account information from, and makes payments using"
-        internetBankingSystem -> email "Sends e-mail using"
-        email -> customer "Sends e-mails to"
-        customer -> supportStaff "Asks questions to" "Telephone"
-        supportStaff -> mainframe "Uses"
-        customer -> atm "Withdraws cash using"
-        atm -> mainframe "Uses"
-        backoffice -> mainframe "Uses"
+        customer = person "Analytics User" "A person who accesses the TAP" "Customer"
 
-        acquirer -> mainframe "Peforms clearing and settlement"
+        marketDataProvider = softwaresystem "Feed Provider" "An external system that supplies real-time and historical market data." "External System"
 
-        # relationships to/from containers
-        customer -> webApplication "Visits bigbank.com/ib using" "HTTPS"
-        customer -> singlePageApplication "Views account balances, and makes payments using"
-        customer -> mobileApp "Views account balances, and makes payments using"
-        webApplication -> singlePageApplication "Delivers to the customer's web browser"
+        group "Imanai TAP" {
+            dataManager = person "Data Manager" "A person who manage actual data info (updates instruments meta etc)" "Staff"
 
-        # relationships to/from components
-        singlePageApplication -> signinController "Makes API calls to" "JSON/HTTPS"
-        singlePageApplication -> accountsSummaryController "Makes API calls to" "JSON/HTTPS"
-        singlePageApplication -> resetPasswordController "Makes API calls to" "JSON/HTTPS"
-        mobileApp -> signinController "Makes API calls to" "JSON/HTTPS"
-        mobileApp -> accountsSummaryController "Makes API calls to" "JSON/HTTPS"
-        mobileApp -> resetPasswordController "Makes API calls to" "JSON/HTTPS"
-        signinController -> securityComponent "Uses"
-        accountsSummaryController -> mainframeBankingSystemFacade "Uses"
-        resetPasswordController -> securityComponent "Uses"
-        resetPasswordController -> emailComponent "Uses"
-        securityComponent -> database "Reads from and writes to" "JDBC"
-        mainframeBankingSystemFacade -> mainframe "Makes API calls to" "XML/HTTPS"
-        emailComponent -> email "Sends e-mail using"
-
-        deploymentEnvironment "Development" {
-            deploymentNode "Developer Laptop" "" "Microsoft Windows 10 or Apple macOS" {
-                deploymentNode "Web Browser" "" "Chrome, Firefox, Safari, or Edge" {
-                    developerSinglePageApplicationInstance = containerInstance singlePageApplication
-                }
-                deploymentNode "Docker Container - Web Server" "" "Docker" {
-                    deploymentNode "Apache Tomcat" "" "Apache Tomcat 8.x" {
-                        developerWebApplicationInstance = containerInstance webApplication
-                        developerApiApplicationInstance = containerInstance apiApplication
-                    }
-                }
-                deploymentNode "Docker Container - Database Server" "" "Docker" {
-                    deploymentNode "Database Server" "" "Oracle 12c" {
-                        developerDatabaseInstance = containerInstance database
-                    }
-                }
-            }
-            deploymentNode "Big Bank plc" "" "Big Bank plc data center" "" {
-                deploymentNode "bigbank-dev001" "" "" "" {
-                    softwareSystemInstance mainframe
-                }
+            metaDataSystem = softwaresystem "Meta Data System" {
+                instrumentRegistry = container "Instrument Registry" "Provide instrument meta data" "Spring Boot App" "Public Service"
+                instrumentRegistryDB = container "Instrument Registry DB" "Stores instrument meta data" "PostgreSQL" "Database"
             }
 
+            marketDataSystem = softwaresystem  "Market Data System" {
+                // !adrs market-data-system/adr
+                // !docs market-data-system/docs
+
+                group "Live Data flow" {
+                    feedAdaptor = container "Feed Adaptor" "Provider-specific adaptor (operates with messages)" "Spring Boot App" "Internal Service"
+                    feedIngestor = container "Feed Ingestor" "Operates with provider agnostic messages and combines it into streams (data quality gate)" "Spring Boot App" "Internal Service"
+                }
+
+                group "Historical Data Flow" {
+                    historicalDataLoader = container "Historical Data Loader" "Provider-specific loader/adaptor" "Spring Boot App" "Internal Service"
+                    historicalDataService = container "Historical Data Service" "Operate with collected immutable market data" "Spring Boot App" "Internal Service"
+                    historicalDataStore = container "Historical Data Store" "Immutable finalized data" "S3 / Parquet / ClickHouse" "Database,Internal Service"
+                }
+
+                streamProvider = container "Unified Stream Provider" "Combines live/historical data to live/replay streams" "Spring Boot App" "Public Service"
+            }
+
+            visualizationSystem = softwaresystem "Visualization System" {
+
+            }
+
+            administrationSystem = softwaresystem "Administration System" {
+
+            }
+
+            strategyEngine = softwaresystem "Strategy Engine" {
+
+            }   
         }
 
-        deploymentEnvironment "Live" {
-            deploymentNode "Customer's mobile device" "" "Apple iOS or Android" {
-                liveMobileAppInstance = containerInstance mobileApp
-            }
-            deploymentNode "Customer's computer" "" "Microsoft Windows or Apple macOS" {
-                deploymentNode "Web Browser" "" "Chrome, Firefox, Safari, or Edge" {
-                    liveSinglePageApplicationInstance = containerInstance singlePageApplication
-                }
-            }
+        // Platform
+        customer -> visualizationSystem "Work with"
+        dataManager -> administrationSystem "Work with"
 
-            deploymentNode "Big Bank plc" "" "Big Bank plc data center" {
-                deploymentNode "bigbank-web***" "" "Ubuntu 16.04 LTS" "" 4 {
-                    deploymentNode "Apache Tomcat" "" "Apache Tomcat 8.x" {
-                        liveWebApplicationInstance = containerInstance webApplication
-                    }
-                }
-                deploymentNode "bigbank-api***" "" "Ubuntu 16.04 LTS" "" 8 {
-                    deploymentNode "Apache Tomcat" "" "Apache Tomcat 8.x" {
-                        liveApiApplicationInstance = containerInstance apiApplication
-                    }
-                }
+        administrationSystem -> instrumentRegistry "Uses/Updates"
+        visualizationSystem -> streamProvider "Uses"
+        visualizationSystem -> instrumentRegistry "Uses"
+        visualizationSystem -> strategyEngine "Uses"
+        strategyEngine -> instrumentRegistry "Uses"
+        strategyEngine -> streamProvider "Uses"
+        marketDataSystem -> instrumentRegistry "Uses"
 
-                deploymentNode "bigbank-db01" "" "Ubuntu 16.04 LTS" {
-                    primaryDatabaseServer = deploymentNode "Oracle - Primary" "" "Oracle 12c" {
-                        livePrimaryDatabaseInstance = containerInstance database
-                    }
-                }
-                deploymentNode "bigbank-db02" "" "Ubuntu 16.04 LTS" "Failover" {
-                    secondaryDatabaseServer = deploymentNode "Oracle - Secondary" "" "Oracle 12c" "Failover" {
-                        liveSecondaryDatabaseInstance = containerInstance database "Failover"
-                    }
-                }
-                deploymentNode "bigbank-prod001" "" "" "" {
-                    softwareSystemInstance mainframe
-                }
-            }
+        feedAdaptor --websocket-> marketDataProvider "Handle instrument feed"
+        historicalDataLoader -> marketDataProvider "Request Historical Data for Instruments"
 
-            primaryDatabaseServer -> secondaryDatabaseServer "Replicates data to"
-        }
+        // Market Data System
+        feedAdaptor --eventBus-> feedIngestor "Streams unified data to Ingestor"
+        streamProvider --stream-> feedIngestor "Uses streams to provide Last Bar for currently opened periods"
+        
+        historicalDataService --gRPC-> historicalDataLoader "Pull unified historical data"
+        historicalDataService -> historicalDataStore "Store in"
+        streamProvider -> historicalDataService "Uses collected historical data"
 
-        deploymentEnvironment "Environment Landscape" {
-            deploymentNode "bigbank-prod001" {
-                softwareSystemInstance mainframe
-            }
-            deploymentNode "bigbank-preprod001" {
-                softwareSystemInstance mainframe
-            }
-            deploymentNode "bigbank-test001" {
-                softwareSystemInstance mainframe
-            }
-            deploymentNode "bigbank-staging1" {
-                softwareSystemInstance email
-            }
-            deploymentNode "bigbank-prod1" {
-                softwareSystemInstance email
-            }
-        }
+        instrumentRegistry -> instrumentRegistryDB
     }
 
     views {
@@ -219,100 +135,18 @@ workspace "Big Bank plc" "This is an example workspace to illustrate the key fea
             autoLayout
         }
 
-        image atm {
-            image atm/atm-example.png
-            title "ATM System"
-            description "Image View to show how the ATM system works internally"
-        }
-
-        systemcontext internetBankingSystem "SystemContext" {
+        systemcontext marketDataSystem "SystemContext" {
             include *
-            animation {
-                internetBankingSystem
-                customer
-                mainframe
-                email
-            }
             autoLayout
-            title "System Context of Internet Banking System"
+            title "System Context of Market Data System"
             description "Describes the overall context"
         }
 
-        container internetBankingSystem "Containers" {
+        container marketDataSystem "MDSContainers" {
             include *
-            animation {
-                customer mainframe email
-                webApplication
-                singlePageApplication
-                mobileApp
-                apiApplication
-                database
-            }
-            autoLayout
         }
 
-        component apiApplication "Components" {
-            include *
-            animation {
-                singlePageApplication mobileApp database email mainframe
-                signinController securityComponent
-                accountsSummaryController mainframeBankingSystemFacade
-                resetPasswordController emailComponent
-            }
-            autoLayout
-        }
-
-        image database {
-            image internet-banking-system/database-erd-example.jpg
-            title "Entity Relationship Diagram"
-            description "Image View to show the ERD diagram for the database container"
-        }
-
-        image accountsSummaryController {
-            image internet-banking-system/uml-class-diagram.png
-            title "AccountsSummaryController Zoom-In"
-            description "This is a sample imageView for code of a component"
-        }
-
-        dynamic apiApplication "SignIn" "Summarises how the sign in feature works in the single-page application." {
-            singlePageApplication -> signinController "Submits credentials to"
-            signinController -> securityComponent "Validates credentials using"
-            securityComponent -> database "select * from users where username = ?"
-            database -> securityComponent "Returns user data to"
-            securityComponent -> signinController "Returns true if the hashed password matches"
-            signinController -> singlePageApplication "Sends back an authentication token to"
-            autoLayout
-        }
-
-        deployment internetBankingSystem "Development" "DevelopmentDeployment" {
-            include *
-            animation {
-                developerSinglePageApplicationInstance
-                developerWebApplicationInstance developerApiApplicationInstance
-                developerDatabaseInstance
-            }
-            autoLayout
-        }
-
-        deployment internetBankingSystem "Live" "LiveDeployment" {
-            include *
-            animation {
-                liveSinglePageApplicationInstance
-                liveMobileAppInstance
-                liveWebApplicationInstance liveApiApplicationInstance
-                livePrimaryDatabaseInstance
-                liveSecondaryDatabaseInstance
-            }
-            autoLayout
-        }
-
-        deployment * "Environment Landscape" "EnvLandscapeMainframe" {
-            include mainframe
-            autoLayout
-            properties {
-                "generatr.view.deployment.belongsTo" "Mainframe Banking System"
-            }
-        }
+        # filtered "MDSContainers" exclude "Database"
 
         styles {
             element "Person" {
@@ -323,13 +157,18 @@ workspace "Big Bank plc" "This is an example workspace to illustrate the key fea
             element "Customer" {
                 background #686868
             }
-            element "Bank Staff" {
+            element "Staff" {
                 background #08427B
             }
             element "Software System" {
-                background #1168bd
+                background #96bde4                
                 color #ffffff
             }
+            element "Internal Service" {
+                background #1168bd
+                opacity 75
+                color #ffffff
+            }            
             element "External System" {
                 background #686868
             }
@@ -338,7 +177,7 @@ workspace "Big Bank plc" "This is an example workspace to illustrate the key fea
                 color #ffffff
             }
             element "Container" {
-                background #438dd5
+                background #1168bd
                 color #ffffff
             }
             element "Web Browser" {
@@ -351,11 +190,17 @@ workspace "Big Bank plc" "This is an example workspace to illustrate the key fea
                 shape Cylinder
             }
             element "Component" {
-                background #85bbf0
+                background #1168bd
                 color #000000
             }
             element "Failover" {
                 opacity 25
+            }
+            relationship "Relationship" {
+                dashed false
+            }
+            relationship "Asynchronous" {
+                dashed true
             }
         }
     }

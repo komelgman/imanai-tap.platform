@@ -6,8 +6,4 @@ platform:
     data-platform: ./deployment/docker-compose/data-platform.yml
   boundedContexts:
     dir: "../bounded-contexts"
-    services:
-      - name: test1
-        repo: https://github.com/komelgman/imanai-tap.test1.git
-      - name: test2
-        repo: https://github.com/komelgman/imanai-tap.test2.git
+    services: []
