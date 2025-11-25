@@ -30,7 +30,7 @@ jobs:
         run: |
           /opt/structurizr-site-generatr/bin/structurizr-site-generatr generate-site \
             -w docs/workspace.dsl \
-            -o build/site
+            -o build/site \
             -a docs/assets
 
       - name: Upload generated site
