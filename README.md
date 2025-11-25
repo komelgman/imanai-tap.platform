@@ -20,6 +20,18 @@ Interactive diagrams and documentation are available at:
 
 The documentation site is automatically regenerated on every push to `main` when files in `/docs` are modified.
 
+### Local Preview
+Local preview via Structurizr Lite (uses workspace.json, so supports manual layout, hot reload).
+
+```shell
+./docs_structurizr_lite_up.ps1
+```
+
+Local structurizr-site-generatr preview (uses workspace.dsl with auto-layout only, static).
+```shell
+./docs_structurizr_site_gen_up.ps1
+```
+
 ## Project Structure
 
 ```

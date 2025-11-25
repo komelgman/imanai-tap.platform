@@ -11,22 +11,16 @@
       "title" : "Record architecture decisions"
     } ],
     "sections" : [ {
-      "content" : "## Embedding diagrams and images\n\nThis page showcases the ability to embed diagrams and static images in documentation.\n\n### Embedding diagrams\n\nDiagrams can be embedded using the `embed:` syntax:\n\n```markdown\n![System Landscape Diagram](embed:SystemLandscape)\n```\n\nSee also: <https://www.structurizr.com/help/documentation/diagrams>\n\n#### Example: Embedded diagram\n\n![System Landscape Diagram](embed:SystemLandscape)\n\n### Embedding static images\n\nStatic assets can be included in the generated site, using the `--assets-dir` command-line flag. This flag can be used\nwith the `serve` command and the `generate-site` command.\n\nWhen, for example, you would like to embed a nice picture which is located in the `pictures` directory under the assets\ndirectory, you can do that as follows:\n\n```markdown\n![A nice picture](/pictures/nice-picture.png)\n```\n\n#### Example: Embedded picture\n\n[Sun](https://www.flickr.com/photos/schmollmolch/4937297813/), by Christian Scheja\n\n![A nice picture](/pictures/nice-picture.png)\n\n### Embedding PlantUML diagrams\n\nStructurizr Site Generatr supports rendering PlantUML embedded in Markdown files.\n\n#### Sequence diagram example\n\n````markdown\n```puml\n@startuml\nFoo -> Bar: doSomething()\n@enduml\n```\n````\n\n```puml\n@startuml\nFoo -> Bar: doSomething()\n@enduml\n```\n\n### Class diagram example\n\n````markdown\n```puml\n@startuml\nclass Foo {\n    +property: String\n    +foo()\n}\n\nclass Bar {\n    -privateProperty: String\n    +bar()\n}\n\nFoo ..> Bar: Uses\n@enduml\n```\n````\n\n```puml\n@startuml\nclass Foo {\n    +property: String\n    +foo()\n}\n\nclass Bar {\n    -privateProperty: String\n    +bar()\n}\n\nFoo ..> Bar: Uses\n@enduml\n```\n\n### Embedding mermaid diagrams\n\nStructurizr Site Generatr is supporting mermaid diagrams in markdown pages using the actual mermaid.js version.\nTherefore every diagram type, supported by mermaid may be used in markdown documentation files.\n\n* flowchart\n* sequence diagram\n* class diagram\n* state diagram\n* entity-relationship diagram\n* user journey\n* gantt chart\n* pie chart\n* requirement diagram\n* and some more\n\nPlease find the full list of supported chart types\non [mermaid.js.org/intro](https://mermaid.js.org/intro/#diagram-types)\n\n#### Flowchart Diagram Example\n\n````markdown\n```mermaid\ngraph TD;\n  A-->B;\n  A-->C;\n  B-->D;\n  C-->D;\n```\n````\n\n```mermaid\ngraph TD;\n  A-->B;\n  A-->C;\n  B-->D;\n  C-->D;\n```\n\n#### Sequence Diagram Example\n\n````markdown\n```mermaid\nsequenceDiagram\n    participant Alice\n    participant Bob\n    Alice->>John: Hello John, how are you?\n    loop Healthcheck\n        John->>John: Fight against hypochondria\n    end\n    Note right of John: Rational thoughts <br/>prevail!\n    John-->>Alice: Great!\n    John->>Bob: How about you?\n    Bob-->>John: Jolly good!\n```\n````\n\n```mermaid\nsequenceDiagram\n    participant Alice\n    participant Bob\n    Alice->>John: Hello John, how are you?\n    loop Healthcheck\n        John->>John: Fight against hypochondria\n    end\n    Note right of John: Rational thoughts <br/>prevail!\n    John-->>Alice: Great!\n    John->>Bob: How about you?\n    Bob-->>John: Jolly good!\n```\n",
-      "filename" : "01-embedding-diagrams-and-images.md",
+      "content" : "# Trading Analytics Portal\n\nУтилита/Портал для широкого круга лиц заинтересованных в анализе долгосрочных трендов на крипто-рынке.\n\n## System Context \n\n![System Landscape Diagram](embed:SystemLandscape)\n",
+      "filename" : "01-Home.md",
       "format" : "Markdown",
       "order" : 1,
-      "title" : ""
-    }, {
-      "content" : "## Extended Markdown features\n\nThis page showcases the ability to use extended Markdown formating features in workspace documentation files. The full list of available extensions to standard commonmark markdown features is documented in the flexmark wiki [Extensions page](https://github.com/vsch/flexmark-java/wiki/Extensions).\n\nMost of these extended features have to be activated in your architecture model as a property in workspace views.\n\n```DSL\nworkspace {\n    ...\n    views {\n        ...\n        properties {\n            ...\n            // full list of available \"generatr.markdown.flexmark.extensions\":\n            // - Abbreviation\n            // - Admonition\n            // - AnchorLink\n            // - Aside\n            // - Attributes\n            // - Autolink\n            // - Definition\n            // - Emoji\n            // - EnumeratedReference\n            // - Footnotes\n            // - GfmIssues\n            // - GfmStrikethroughSubscript\n            // - GfmTaskList\n            // - GfmUsers\n            // - GitLab\n            // - Ins\n            // - Macros\n            // - MediaTags\n            // - ResizableImage\n            // - Superscript\n            // - Tables\n            // - TableOfContents\n            // - SimulatedTableOfContents\n            // - Typographic\n            // - WikiLinks\n            // - XWikiMacro\n            // - YAMLFrontMatter\n            // - YouTubeLink\n            // see https://github.com/vsch/flexmark-java/wiki/Extensions\n            // ATTENTION:\n            // * \"generatr.markdown.flexmark.extensions\" values must be separated by comma\n            // * it's not possible to use \"GitLab\" and \"ResizableImage\" extensions together\n            // default behaviour, if no generatr.markdown.flexmark.extensions property is specified, is to load the Tables extension only\n            \"generatr.markdown.flexmark.extensions\" \"Abbreviation,Admonition,AnchorLink,Attributes,Autolink,Definition,Emoji,Footnotes,GfmTaskList,GitLab,MediaTags,Tables,TableOfContents,Typographic\"\n            ...\n        }\n        ...\n    }\n    ...\n}\n```\n\n### Table of Contents\n\n`[TOC]` element which renders a table of contents\n\n```markdown\n[TOC]\n```\n\nwill render into\n\n[TOC]\n\n#### Usage info\n\n\"TableOfContents\" is an optional feature, that has to be activated in workspace views properties\n\n```DSL\n    \"generatr.markdown.flexmark.extensions\" \"TableOfContents\"\n```\n\n### Render Tables\n\nStandard tables can be embedded in markdown text syntax:\n\n```markdown\n| header1 | header2 |\n| ------- | ------- |\n| content | content |\n```\n\nThis will be rendered as\n\n| header1 | header2 |\n| ------- | ------- |\n| content | content |\n\n#### Usage info\n\n\"Render Tables\" is an optional feature, that is enabled by default. If other optional markdown features are activated in workspace views properties, than you have to ensure, that Tables is listed in the extension list as well.\n\n```DSL\n    \"generatr.markdown.flexmark.extensions\" \"Tables\"\n```\n\n### Admonition Blocks\n\nAdmonitions create block-styled side content.\n\n```markdown\n!!! faq \"FAQ\"\n    This is a FAQ.\n!!! attention \"Warning\"\n    This is a warning message\n\n!!! info \"information\"\n    this is an additional information\n```\n\nThis will be rendered as\n\n!!! faq \"FAQ\"\n    This is a FAQ.\n!!! attention \"Warning\"\n    This is a warning message\n\n!!! info \"information\"\n    this is an additional information\n\n#### Usage info\n\n\"Admonition Blocks\" is an optional feature, that has to be activated in workspace views properties\n\n```DSL\n    \"generatr.markdown.flexmark.extensions\" \"Admonition\"\n```\n\n### GitLab flavored markdown extensions\n\nPlease see [GitLab flavored markdown features](https://docs.gitlab.com/ee/user/markdown.html?tab=Rendered+Markdown) for a detailed description.\nUnfortunately only the following features are supported by Flexmark markdown renderer, that is used here.\n\n#### Multiline Block quote delimiters\n\n```markdown\n>>>\nIf you paste a message from somewhere else\n\nthat spans multiple lines,\n\nyou can quote that without having to manually prepend `>` to every line!\n>>>\n```\n\n>>>\nIf you paste a message from somewhere else\n\nthat spans multiple lines,\n\nyou can quote that without having to manually prepend `>` to every line!\n>>>\n\n#### Inline diff (deletions and additions)\n\nWith inline diff tags, you can display `{+ additions +}` or `[- deletions -]`.\n\nThe wrapping tags can be either curly braces or square brackets:\n\n```markdown\n- {+ addition 1 +}\n- [+ addition 2 +]\n- {- deletion 3 -}\n- [- deletion 4 -]\n```\n\n- {+ addition 1 +}\n- [+ addition 2 +]\n- {- deletion 3 -}\n- [- deletion 4 -]\n\n#### Math\n\nMath written in LaTeX syntax is rendered with [KaTeX](https://github.com/KaTeX/KaTeX).\n_KaTeX only supports a [subset](https://katex.org/docs/supported.html) of LaTeX._\n\nMath written between dollar signs with backticks (``$`...`$``) or single dollar signs (`$...$`)\nis rendered inline with the text.\n\nMath written between double dollar signs (`$$...$$`) or in a code block with\nthe language declared as `math` is rendered on a separate line:\n\n````markdown\nThis math is inline: $`a^2+b^2=c^2`$.\n\nThis math is on a separate line using a ```` ```math ```` block:\n\n```math\na^2+b^2=c^2\n```\n````\n\nThis math is inline: $`a^2+b^2=c^2`$.\n\nThis math is on a separate line using a ```` ```math ```` block:\n\n```math\na^2+b^2=c^2\n```\n\n#### Usage info\n\n\"GitLab Flavored Markdown\" is an optional feature, that has to be activated in workspace views properties\n\n```DSL\n    \"generatr.markdown.flexmark.extensions\" \"GitLab\"\n```\n\n### AnchorLink\n\nAutomatically adds anchor links to headings, using GitHub id generation algorithm\n\n#### Usage info\n\n\"AnchorLink\" is an optional feature, that has to be activated in workspace views properties\n\n```DSL\n    \"generatr.markdown.flexmark.extensions\" \"AnchorLink\"\n```\n\n### Definition Lists\n\nConverts definition syntax of Php Markdown Extra Definition List to `<dl></dl>` HTML and corresponding AST nodes.\n\n```markdown\nDefinition Term\n: Definition of above term\n: Another definition of above term\n```\n\nDefinition Term\n: Definition of above term\n: Another definition of above term\n\n#### Usage info\n\n\"Definition Lists\" is an optional feature, that has to be activated in workspace views properties\n\n```DSL\n    \"generatr.markdown.flexmark.extensions\" \"Definition\"\n```\n\n### Emoji\n\nAllows to create image link to emoji images from emoji shortcuts using [Emoji-Cheat-Sheet.com](https://www.webfx.com/tools/emoji-cheat-sheet) and optionally to replace with its unicode equivalent character with mapping by Mark Wunsch found at [mwunsch/rumoji](https://github.com/mwunsch/rumoji)\n\n```markdown\nthumbsup :thumbsup:  \ncalendar :calendar:  \nwarning :warning:  \n```\n\nthumbsup :thumbsup:  \ncalendar :calendar:  \nwarning :warning:  \n\n#### Usage info\n\n\"Emoji\" is an optional feature, that has to be activated in workspace views properties\n\n```DSL\n    \"generatr.markdown.flexmark.extensions\" \"Emoji\"\n```\n\n### GfmTaskList\n\nEnables list items based task lists whose text begins with: `[ ]`, `[x]` or `[X]`\n\n```markdown\n- [x] Completed task\n- [ ] Incomplete task\n  - [x] Sub-task 1\n  - [ ] Sub-task 3\n\n1. [x] Completed task\n1. [ ] Incomplete task\n   1. [x] Sub-task 1\n   1. [ ] Sub-task 3\n```\n\nwill be rendered as\n\n- [x] Completed task\n- [ ] Incomplete task\n  - [x] Sub-task 1\n  - [ ] Sub-task 3\n\n1. [x] Completed task\n1. [ ] Incomplete task\n   1. [x] Sub-task 1\n   1. [ ] Sub-task 3\n\n#### Usage info\n\n\"GfmTaskList\" is an optional feature, that has to be activated in workspace views properties\n\n```DSL\n    \"generatr.markdown.flexmark.extensions\" \"GfmTaskList\"\n```\n\n### Links to Markdown documents\n\nPlacing links on markdown pages is easy. You can link to:\n\n* an overview page like [Workspace decisions](/decisions/),\n* an individual decision [ADR-0001. record architecture decisions](/decisions/1/)\n* or some system documentation like [Internet Banking](/internet-banking-system/).\n",
-      "filename" : "02-markdown-features.md",
-      "format" : "Markdown",
-      "order" : 2,
       "title" : ""
     } ]
   },
   "id" : 1,
   "lastModifiedAgent" : "structurizr-ui",
-  "lastModifiedDate" : "2025-11-24T18:39:52Z",
+  "lastModifiedDate" : "2025-11-24T23:11:06Z",
   "model" : {
     "people" : [ {
       "description" : "A person who accesses the TAP",
@@ -39,7 +33,7 @@
       "relationships" : [ {
         "description" : "Work with",
         "destinationId" : "14",
-        "id" : "17",
+        "id" : "18",
         "sourceId" : "1",
         "tags" : "Relationship"
       } ],
@@ -56,7 +50,7 @@
       "relationships" : [ {
         "description" : "Work with",
         "destinationId" : "15",
-        "id" : "18",
+        "id" : "19",
         "sourceId" : "3",
         "tags" : "Relationship"
       } ],
@@ -70,7 +64,7 @@
       "documentation" : { },
       "id" : "2",
       "location" : "Unspecified",
-      "name" : "Feed Provider",
+      "name" : "Market Data Provider",
       "properties" : {
         "structurizr.dsl.identifier" : "marketdataprovider"
       },
@@ -86,7 +80,7 @@
         },
         "relationships" : [ {
           "destinationId" : "6",
-          "id" : "40",
+          "id" : "45",
           "sourceId" : "5",
           "tags" : "Relationship"
         } ],
@@ -103,6 +97,7 @@
         "tags" : "Element,Container,Database",
         "technology" : "PostgreSQL"
       } ],
+      "description" : "Provide meta data (instrument, ...)",
       "documentation" : { },
       "group" : "Imanai TAP",
       "id" : "4",
@@ -123,16 +118,16 @@
           "structurizr.dsl.identifier" : "feedadaptor"
         },
         "relationships" : [ {
-          "description" : "Handle instrument feed",
+          "description" : "Handle feed",
           "destinationId" : "2",
-          "id" : "32",
+          "id" : "37",
           "sourceId" : "8",
           "tags" : "Relationship,Synchronous",
           "technology" : "Websocket"
         }, {
-          "description" : "Streams unified data to Ingestor",
+          "description" : "Send unified data",
           "destinationId" : "9",
-          "id" : "35",
+          "id" : "40",
           "sourceId" : "8",
           "tags" : "Relationship,Asynchronous",
           "technology" : "Kafka/Redis Streams"
@@ -162,7 +157,7 @@
         "relationships" : [ {
           "description" : "Request Historical Data for Instruments",
           "destinationId" : "2",
-          "id" : "34",
+          "id" : "39",
           "sourceId" : "10",
           "tags" : "Relationship"
         } ],
@@ -180,14 +175,14 @@
         "relationships" : [ {
           "description" : "Pull unified historical data",
           "destinationId" : "10",
-          "id" : "37",
+          "id" : "42",
           "sourceId" : "11",
           "tags" : "Relationship,Synchronous",
           "technology" : "gRPC"
         }, {
           "description" : "Store in",
           "destinationId" : "12",
-          "id" : "38",
+          "id" : "43",
           "sourceId" : "11",
           "tags" : "Relationship"
         } ],
@@ -213,22 +208,29 @@
           "structurizr.dsl.identifier" : "streamprovider"
         },
         "relationships" : [ {
-          "description" : "Uses streams to provide Last Bar for currently opened periods",
+          "description" : "Uses",
+          "destinationId" : "16",
+          "id" : "34",
+          "sourceId" : "13",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Aggregate streams into Last Bar for currently opened periods",
           "destinationId" : "9",
-          "id" : "36",
+          "id" : "41",
           "sourceId" : "13",
           "tags" : "Relationship,Asynchronous",
           "technology" : "Kafka Streams etc"
         }, {
           "description" : "Uses collected historical data",
           "destinationId" : "11",
-          "id" : "39",
+          "id" : "44",
           "sourceId" : "13",
           "tags" : "Relationship"
         } ],
         "tags" : "Element,Container,Public Service",
         "technology" : "Spring Boot App"
       } ],
+      "description" : "Provide market data streams (live, replay, transformed, combined)",
       "documentation" : { },
       "group" : "Imanai TAP",
       "id" : "7",
@@ -240,20 +242,26 @@
       "relationships" : [ {
         "description" : "Uses",
         "destinationId" : "5",
-        "id" : "30",
+        "id" : "31",
         "sourceId" : "7",
         "tags" : "Relationship"
       }, {
         "description" : "Uses",
         "destinationId" : "4",
-        "id" : "31",
-        "linkedRelationshipId" : "30",
+        "id" : "32",
+        "linkedRelationshipId" : "31",
         "sourceId" : "7"
       }, {
-        "description" : "Handle instrument feed",
+        "description" : "Uses",
+        "destinationId" : "16",
+        "id" : "35",
+        "linkedRelationshipId" : "34",
+        "sourceId" : "7"
+      }, {
+        "description" : "Handle feed",
         "destinationId" : "2",
-        "id" : "33",
-        "linkedRelationshipId" : "32",
+        "id" : "38",
+        "linkedRelationshipId" : "37",
         "sourceId" : "7",
         "technology" : "Websocket"
       } ],
@@ -270,36 +278,43 @@
       "relationships" : [ {
         "description" : "Uses",
         "destinationId" : "13",
-        "id" : "21",
+        "id" : "22",
         "sourceId" : "14",
         "tags" : "Relationship"
       }, {
         "description" : "Uses",
         "destinationId" : "7",
-        "id" : "22",
-        "linkedRelationshipId" : "21",
+        "id" : "23",
+        "linkedRelationshipId" : "22",
         "sourceId" : "14"
       }, {
         "description" : "Uses",
         "destinationId" : "5",
-        "id" : "23",
+        "id" : "24",
         "sourceId" : "14",
         "tags" : "Relationship"
       }, {
         "description" : "Uses",
         "destinationId" : "4",
-        "id" : "24",
-        "linkedRelationshipId" : "23",
+        "id" : "25",
+        "linkedRelationshipId" : "24",
         "sourceId" : "14"
       }, {
         "description" : "Uses",
+        "destinationId" : "17",
+        "id" : "26",
+        "sourceId" : "14",
+        "tags" : "Relationship"
+      }, {
+        "description" : "Uses",
         "destinationId" : "16",
-        "id" : "25",
+        "id" : "36",
         "sourceId" : "14",
         "tags" : "Relationship"
       } ],
       "tags" : "Element,Software System"
     }, {
+      "description" : "System administartion (users, instruments, ...)",
       "documentation" : { },
       "group" : "Imanai TAP",
       "id" : "15",
@@ -311,14 +326,14 @@
       "relationships" : [ {
         "description" : "Uses/Updates",
         "destinationId" : "5",
-        "id" : "19",
+        "id" : "20",
         "sourceId" : "15",
         "tags" : "Relationship"
       }, {
         "description" : "Uses/Updates",
         "destinationId" : "4",
-        "id" : "20",
-        "linkedRelationshipId" : "19",
+        "id" : "21",
+        "linkedRelationshipId" : "20",
         "sourceId" : "15"
       } ],
       "tags" : "Element,Software System"
@@ -327,6 +342,16 @@
       "group" : "Imanai TAP",
       "id" : "16",
       "location" : "Unspecified",
+      "name" : "User Data System",
+      "properties" : {
+        "structurizr.dsl.identifier" : "userdatasystem"
+      },
+      "tags" : "Element,Software System"
+    }, {
+      "documentation" : { },
+      "group" : "Imanai TAP",
+      "id" : "17",
+      "location" : "Unspecified",
       "name" : "Strategy Engine",
       "properties" : {
         "structurizr.dsl.identifier" : "strategyengine"
@@ -334,39 +359,45 @@
       "relationships" : [ {
         "description" : "Uses",
         "destinationId" : "5",
-        "id" : "26",
-        "sourceId" : "16",
+        "id" : "27",
+        "sourceId" : "17",
         "tags" : "Relationship"
       }, {
         "description" : "Uses",
         "destinationId" : "4",
-        "id" : "27",
-        "linkedRelationshipId" : "26",
-        "sourceId" : "16"
+        "id" : "28",
+        "linkedRelationshipId" : "27",
+        "sourceId" : "17"
       }, {
         "description" : "Uses",
         "destinationId" : "13",
-        "id" : "28",
-        "sourceId" : "16",
+        "id" : "29",
+        "sourceId" : "17",
         "tags" : "Relationship"
       }, {
         "description" : "Uses",
         "destinationId" : "7",
-        "id" : "29",
-        "linkedRelationshipId" : "28",
-        "sourceId" : "16"
+        "id" : "30",
+        "linkedRelationshipId" : "29",
+        "sourceId" : "17"
+      }, {
+        "description" : "Uses",
+        "destinationId" : "16",
+        "id" : "33",
+        "sourceId" : "17",
+        "tags" : "Relationship"
       } ],
       "tags" : "Element,Software System"
     } ]
   },
   "name" : "Imanai TAP",
   "properties" : {
-    "structurizr.dsl" : "d29ya3NwYWNlICJJbWFuYWkgVEFQIiAiVHJhZGluZyBBbmFseXRpY3MgUG9ydGFsIiB7CiAgICAhZG9jcyB3b3Jrc3BhY2UtZG9jcwogICAgIWFkcnMgd29ya3NwYWNlLWFkcnMKCiAgICBtb2RlbCB7CiAgICAgICAgcHJvcGVydGllcyB7CiAgICAgICAgICAgICJzdHJ1Y3R1cml6ci5ncm91cFNlcGFyYXRvciIgIi8iCiAgICAgICAgfQoKICAgICAgICBhcmNoZXR5cGVzIHsKICAgICAgICAgICAgc3luYyA9IC0+IHsKICAgICAgICAgICAgICAgIHRhZ3MgIlN5bmNocm9ub3VzIgogICAgICAgICAgICB9CiAgICAgICAgICAgIGh0dHBzID0gLS1zeW5jLT4gewogICAgICAgICAgICAgICAgdGVjaG5vbG9neSAiSFRUUFMiCiAgICAgICAgICAgIH0KICAgICAgICAgICAgZ1JQQyA9IC0tc3luYy0+IHsKICAgICAgICAgICAgICAgIHRlY2hub2xvZ3kgImdSUEMiCiAgICAgICAgICAgIH0KICAgICAgICAgICAgd2Vic29ja2V0ID0gLS1zeW5jLT4gewogICAgICAgICAgICAgICAgdGVjaG5vbG9neSAiV2Vic29ja2V0IgogICAgICAgICAgICB9CiAgICAgICAgICAgIGFzeW5jID0gLT4gewogICAgICAgICAgICAgICAgdGFncyAiQXN5bmNocm9ub3VzIgogICAgICAgICAgICB9CiAgICAgICAgICAgIGV2ZW50QnVzID0gLS1hc3luYy0+IHsKICAgICAgICAgICAgICAgIHRlY2hub2xvZ3kgIkthZmthL1JlZGlzIFN0cmVhbXMiCiAgICAgICAgICAgIH0KICAgICAgICAgICAgc3RyZWFtID0gLS1hc3luYy0+IHsKICAgICAgICAgICAgICAgIHRlY2hub2xvZ3kgIkthZmthIFN0cmVhbXMgZXRjIgogICAgICAgICAgICB9CiAgICAgICAgfQoKICAgICAgICBjdXN0b21lciA9IHBlcnNvbiAiQW5hbHl0aWNzIFVzZXIiICJBIHBlcnNvbiB3aG8gYWNjZXNzZXMgdGhlIFRBUCIgIkN1c3RvbWVyIgoKICAgICAgICBtYXJrZXREYXRhUHJvdmlkZXIgPSBzb2Z0d2FyZXN5c3RlbSAiRmVlZCBQcm92aWRlciIgIkFuIGV4dGVybmFsIHN5c3RlbSB0aGF0IHN1cHBsaWVzIHJlYWwtdGltZSBhbmQgaGlzdG9yaWNhbCBtYXJrZXQgZGF0YS4iICJFeHRlcm5hbCBTeXN0ZW0iCgogICAgICAgIGdyb3VwICJJbWFuYWkgVEFQIiB7CiAgICAgICAgICAgIGRhdGFNYW5hZ2VyID0gcGVyc29uICJEYXRhIE1hbmFnZXIiICJBIHBlcnNvbiB3aG8gbWFuYWdlIGFjdHVhbCBkYXRhIGluZm8gKHVwZGF0ZXMgaW5zdHJ1bWVudHMgbWV0YSBldGMpIiAiU3RhZmYiCgogICAgICAgICAgICBtZXRhRGF0YVN5c3RlbSA9IHNvZnR3YXJlc3lzdGVtICJNZXRhIERhdGEgU3lzdGVtIiB7CiAgICAgICAgICAgICAgICBpbnN0cnVtZW50UmVnaXN0cnkgPSBjb250YWluZXIgIkluc3RydW1lbnQgUmVnaXN0cnkiICJQcm92aWRlIGluc3RydW1lbnQgbWV0YSBkYXRhIiAiU3ByaW5nIEJvb3QgQXBwIiAiUHVibGljIFNlcnZpY2UiCiAgICAgICAgICAgICAgICBpbnN0cnVtZW50UmVnaXN0cnlEQiA9IGNvbnRhaW5lciAiSW5zdHJ1bWVudCBSZWdpc3RyeSBEQiIgIlN0b3JlcyBpbnN0cnVtZW50IG1ldGEgZGF0YSIgIlBvc3RncmVTUUwiICJEYXRhYmFzZSIKICAgICAgICAgICAgfQoKICAgICAgICAgICAgbWFya2V0RGF0YVN5c3RlbSA9IHNvZnR3YXJlc3lzdGVtICAiTWFya2V0IERhdGEgU3lzdGVtIiB7CiAgICAgICAgICAgICAgICAvLyAhYWRycyBtYXJrZXQtZGF0YS1zeXN0ZW0vYWRyCiAgICAgICAgICAgICAgICAvLyAhZG9jcyBtYXJrZXQtZGF0YS1zeXN0ZW0vZG9jcwoKICAgICAgICAgICAgICAgIGdyb3VwICJMaXZlIERhdGEgZmxvdyIgewogICAgICAgICAgICAgICAgICAgIGZlZWRBZGFwdG9yID0gY29udGFpbmVyICJGZWVkIEFkYXB0b3IiICJQcm92aWRlci1zcGVjaWZpYyBhZGFwdG9yIChvcGVyYXRlcyB3aXRoIG1lc3NhZ2VzKSIgIlNwcmluZyBCb290IEFwcCIgIkludGVybmFsIFNlcnZpY2UiCiAgICAgICAgICAgICAgICAgICAgZmVlZEluZ2VzdG9yID0gY29udGFpbmVyICJGZWVkIEluZ2VzdG9yIiAiT3BlcmF0ZXMgd2l0aCBwcm92aWRlciBhZ25vc3RpYyBtZXNzYWdlcyBhbmQgY29tYmluZXMgaXQgaW50byBzdHJlYW1zIChkYXRhIHF1YWxpdHkgZ2F0ZSkiICJTcHJpbmcgQm9vdCBBcHAiICJJbnRlcm5hbCBTZXJ2aWNlIgogICAgICAgICAgICAgICAgfQoKICAgICAgICAgICAgICAgIGdyb3VwICJIaXN0b3JpY2FsIERhdGEgRmxvdyIgewogICAgICAgICAgICAgICAgICAgIGhpc3RvcmljYWxEYXRhTG9hZGVyID0gY29udGFpbmVyICJIaXN0b3JpY2FsIERhdGEgTG9hZGVyIiAiUHJvdmlkZXItc3BlY2lmaWMgbG9hZGVyL2FkYXB0b3IiICJTcHJpbmcgQm9vdCBBcHAiICJJbnRlcm5hbCBTZXJ2aWNlIgogICAgICAgICAgICAgICAgICAgIGhpc3RvcmljYWxEYXRhU2VydmljZSA9IGNvbnRhaW5lciAiSGlzdG9yaWNhbCBEYXRhIFNlcnZpY2UiICJPcGVyYXRlIHdpdGggY29sbGVjdGVkIGltbXV0YWJsZSBtYXJrZXQgZGF0YSIgIlNwcmluZyBCb290IEFwcCIgIkludGVybmFsIFNlcnZpY2UiCiAgICAgICAgICAgICAgICAgICAgaGlzdG9yaWNhbERhdGFTdG9yZSA9IGNvbnRhaW5lciAiSGlzdG9yaWNhbCBEYXRhIFN0b3JlIiAiSW1tdXRhYmxlIGZpbmFsaXplZCBkYXRhIiAiUzMgLyBQYXJxdWV0IC8gQ2xpY2tIb3VzZSIgIkRhdGFiYXNlLEludGVybmFsIFNlcnZpY2UiCiAgICAgICAgICAgICAgICB9CgogICAgICAgICAgICAgICAgc3RyZWFtUHJvdmlkZXIgPSBjb250YWluZXIgIlVuaWZpZWQgU3RyZWFtIFByb3ZpZGVyIiAiQ29tYmluZXMgbGl2ZS9oaXN0b3JpY2FsIGRhdGEgdG8gbGl2ZS9yZXBsYXkgc3RyZWFtcyIgIlNwcmluZyBCb290IEFwcCIgIlB1YmxpYyBTZXJ2aWNlIgogICAgICAgICAgICB9CgogICAgICAgICAgICB2aXN1YWxpemF0aW9uU3lzdGVtID0gc29mdHdhcmVzeXN0ZW0gIlZpc3VhbGl6YXRpb24gU3lzdGVtIiB7CgogICAgICAgICAgICB9CgogICAgICAgICAgICBhZG1pbmlzdHJhdGlvblN5c3RlbSA9IHNvZnR3YXJlc3lzdGVtICJBZG1pbmlzdHJhdGlvbiBTeXN0ZW0iIHsKCiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIHN0cmF0ZWd5RW5naW5lID0gc29mdHdhcmVzeXN0ZW0gIlN0cmF0ZWd5IEVuZ2luZSIgewoKICAgICAgICAgICAgfSAgIAogICAgICAgIH0KCiAgICAgICAgLy8gUGxhdGZvcm0KICAgICAgICBjdXN0b21lciAtPiB2aXN1YWxpemF0aW9uU3lzdGVtICJXb3JrIHdpdGgiCiAgICAgICAgZGF0YU1hbmFnZXIgLT4gYWRtaW5pc3RyYXRpb25TeXN0ZW0gIldvcmsgd2l0aCIKCiAgICAgICAgYWRtaW5pc3RyYXRpb25TeXN0ZW0gLT4gaW5zdHJ1bWVudFJlZ2lzdHJ5ICJVc2VzL1VwZGF0ZXMiCiAgICAgICAgdmlzdWFsaXphdGlvblN5c3RlbSAtPiBzdHJlYW1Qcm92aWRlciAiVXNlcyIKICAgICAgICB2aXN1YWxpemF0aW9uU3lzdGVtIC0+IGluc3RydW1lbnRSZWdpc3RyeSAiVXNlcyIKICAgICAgICB2aXN1YWxpemF0aW9uU3lzdGVtIC0+IHN0cmF0ZWd5RW5naW5lICJVc2VzIgogICAgICAgIHN0cmF0ZWd5RW5naW5lIC0+IGluc3RydW1lbnRSZWdpc3RyeSAiVXNlcyIKICAgICAgICBzdHJhdGVneUVuZ2luZSAtPiBzdHJlYW1Qcm92aWRlciAiVXNlcyIKICAgICAgICBtYXJrZXREYXRhU3lzdGVtIC0+IGluc3RydW1lbnRSZWdpc3RyeSAiVXNlcyIKCiAgICAgICAgZmVlZEFkYXB0b3IgLS13ZWJzb2NrZXQtPiBtYXJrZXREYXRhUHJvdmlkZXIgIkhhbmRsZSBpbnN0cnVtZW50IGZlZWQiCiAgICAgICAgaGlzdG9yaWNhbERhdGFMb2FkZXIgLT4gbWFya2V0RGF0YVByb3ZpZGVyICJSZXF1ZXN0IEhpc3RvcmljYWwgRGF0YSBmb3IgSW5zdHJ1bWVudHMiCgogICAgICAgIC8vIE1hcmtldCBEYXRhIFN5c3RlbQogICAgICAgIGZlZWRBZGFwdG9yIC0tZXZlbnRCdXMtPiBmZWVkSW5nZXN0b3IgIlN0cmVhbXMgdW5pZmllZCBkYXRhIHRvIEluZ2VzdG9yIgogICAgICAgIHN0cmVhbVByb3ZpZGVyIC0tc3RyZWFtLT4gZmVlZEluZ2VzdG9yICJVc2VzIHN0cmVhbXMgdG8gcHJvdmlkZSBMYXN0IEJhciBmb3IgY3VycmVudGx5IG9wZW5lZCBwZXJpb2RzIgogICAgICAgIAogICAgICAgIGhpc3RvcmljYWxEYXRhU2VydmljZSAtLWdSUEMtPiBoaXN0b3JpY2FsRGF0YUxvYWRlciAiUHVsbCB1bmlmaWVkIGhpc3RvcmljYWwgZGF0YSIKICAgICAgICBoaXN0b3JpY2FsRGF0YVNlcnZpY2UgLT4gaGlzdG9yaWNhbERhdGFTdG9yZSAiU3RvcmUgaW4iCiAgICAgICAgc3RyZWFtUHJvdmlkZXIgLT4gaGlzdG9yaWNhbERhdGFTZXJ2aWNlICJVc2VzIGNvbGxlY3RlZCBoaXN0b3JpY2FsIGRhdGEiCgogICAgICAgIGluc3RydW1lbnRSZWdpc3RyeSAtPiBpbnN0cnVtZW50UmVnaXN0cnlEQgogICAgfQoKICAgIHZpZXdzIHsKICAgICAgICBwcm9wZXJ0aWVzIHsKICAgICAgICAgICAgImM0cGxhbnR1bWwuZWxlbWVudFByb3BlcnRpZXMiICJ0cnVlIgogICAgICAgICAgICAiYzRwbGFudHVtbC50YWdzIiAidHJ1ZSIKICAgICAgICAgICAgImdlbmVyYXRyLnN0eWxlLmNvbG9ycy5wcmltYXJ5IiAiIzQ4NWZjNyIKICAgICAgICAgICAgImdlbmVyYXRyLnN0eWxlLmNvbG9ycy5zZWNvbmRhcnkiICIjZmZmZmZmIgogICAgICAgICAgICAiZ2VuZXJhdHIuc3R5bGUuZmF2aWNvblBhdGgiICJzaXRlL2Zhdmljb24uaWNvIgogICAgICAgICAgICAiZ2VuZXJhdHIuc3R5bGUubG9nb1BhdGgiICJzaXRlL2xvZ28ucG5nIgoKICAgICAgICAgICAgLy8gQWJzb2x1dGUgVVJMJ3MgbGlrZSAiaHR0cHM6Ly9leGFtcGxlLmNvbS9jdXN0b20uY3NzIiBhcmUgYWxzbyBzdXBwb3J0ZWQKICAgICAgICAgICAgImdlbmVyYXRyLnN0eWxlLmN1c3RvbVN0eWxlc2hlZXQiICJzaXRlL2N1c3RvbS5jc3MiCgogICAgICAgICAgICAiZ2VuZXJhdHIuc3ZnbGluay50YXJnZXQiICJfc2VsZiIKCiAgICAgICAgICAgIC8vIEZ1bGwgbGlzdCBvZiBhdmFpbGFibGUgImdlbmVyYXRyLm1hcmtkb3duLmZsZXhtYXJrLmV4dGVuc2lvbnMiCiAgICAgICAgICAgIC8vICJBYmJyZXZpYXRpb24sQWRtb25pdGlvbixBbmNob3JMaW5rLEFzaWRlLEF0dHJpYnV0ZXMsQXV0b2xpbmssRGVmaW5pdGlvbixFbW9qaSxFbnVtZXJhdGVkUmVmZXJlbmNlLEZvb3Rub3RlcyxHZm1Jc3N1ZXMsR2ZtU3RyaWtldGhyb3VnaFN1YnNjcmlwdCxHZm1UYXNrTGlzdCxHZm1Vc2VycyxHaXRMYWIsSW5zLE1hY3JvcyxNZWRpYVRhZ3MsUmVzaXphYmxlSW1hZ2UsU3VwZXJzY3JpcHQsVGFibGVzLFRhYmxlT2ZDb250ZW50cyxTaW11bGF0ZWRUYWJsZU9mQ29udGVudHMsVHlwb2dyYXBoaWMsV2lraUxpbmtzLFhXaWtpTWFjcm8sWUFNTEZyb250TWF0dGVyLFlvdVR1YmVMaW5rIgogICAgICAgICAgICAvLyBzZWUgaHR0cHM6Ly9naXRodWIuY29tL3ZzY2gvZmxleG1hcmstamF2YS93aWtpL0V4dGVuc2lvbnMKICAgICAgICAgICAgLy8gQVRURU5USU9OOgogICAgICAgICAgICAvLyAqICJnZW5lcmF0ci5tYXJrZG93bi5mbGV4bWFyay5leHRlbnNpb25zIiB2YWx1ZXMgbXVzdCBiZSBzZXBhcmF0ZWQgYnkgY29tbWEKICAgICAgICAgICAgLy8gKiBpdCdzIG5vdCBwb3NzaWJsZSB0byB1c2UgIkdpdExhYiIgYW5kICJSZXNpemFibGVJbWFnZSIgZXh0ZW5zaW9ucyB0b2dldGhlcgogICAgICAgICAgICAvLyBkZWZhdWx0IGJlaGF2aW91ciwgaWYgbm8gZ2VuZXJhdHIubWFya2Rvd24uZmxleG1hcmsuZXh0ZW5zaW9ucyBwcm9wZXJ0eSBpcyBzcGVjaWZpZWQsIGlzIHRvIGxvYWQgdGhlIFRhYmxlcyBleHRlbnNpb24gb25seQogICAgICAgICAgICAiZ2VuZXJhdHIubWFya2Rvd24uZmxleG1hcmsuZXh0ZW5zaW9ucyIgIkFiYnJldmlhdGlvbixBZG1vbml0aW9uLEFuY2hvckxpbmssQXR0cmlidXRlcyxBdXRvbGluayxEZWZpbml0aW9uLEVtb2ppLEZvb3Rub3RlcyxHZm1UYXNrTGlzdCxHaXRMYWIsTWVkaWFUYWdzLFRhYmxlcyxUYWJsZU9mQ29udGVudHMsVHlwb2dyYXBoaWMiCgogICAgICAgICAgICAiZ2VuZXJhdHIuc2l0ZS5leHBvcnRlciIgInN0cnVjdHVyaXpyIgogICAgICAgICAgICAiZ2VuZXJhdHIuc2l0ZS5leHRlcm5hbFRhZyIgIkV4dGVybmFsIFN5c3RlbSIKICAgICAgICAgICAgImdlbmVyYXRyLnNpdGUubmVzdEdyb3VwcyIgImZhbHNlIgogICAgICAgICAgICAiZ2VuZXJhdHIuc2l0ZS5jZG4iICJodHRwczovL2Nkbi5qc2RlbGl2ci5uZXQvbnBtIgogICAgICAgICAgICAiZ2VuZXJhdHIuc2l0ZS50aGVtZSIgImF1dG8iCiAgICAgICAgfQoKICAgICAgICBzeXN0ZW1sYW5kc2NhcGUgIlN5c3RlbUxhbmRzY2FwZSIgewogICAgICAgICAgICBpbmNsdWRlICoKICAgICAgICAgICAgYXV0b0xheW91dAogICAgICAgIH0KCiAgICAgICAgc3lzdGVtY29udGV4dCBtYXJrZXREYXRhU3lzdGVtICJTeXN0ZW1Db250ZXh0IiB7CiAgICAgICAgICAgIGluY2x1ZGUgKgogICAgICAgICAgICBhdXRvTGF5b3V0CiAgICAgICAgICAgIHRpdGxlICJTeXN0ZW0gQ29udGV4dCBvZiBNYXJrZXQgRGF0YSBTeXN0ZW0iCiAgICAgICAgICAgIGRlc2NyaXB0aW9uICJEZXNjcmliZXMgdGhlIG92ZXJhbGwgY29udGV4dCIKICAgICAgICB9CgogICAgICAgIGNvbnRhaW5lciBtYXJrZXREYXRhU3lzdGVtICJNRFNDb250YWluZXJzIiB7CiAgICAgICAgICAgIGluY2x1ZGUgKgogICAgICAgIH0KCiAgICAgICAgIyBmaWx0ZXJlZCAiTURTQ29udGFpbmVycyIgZXhjbHVkZSAiRGF0YWJhc2UiCgogICAgICAgIHN0eWxlcyB7CiAgICAgICAgICAgIGVsZW1lbnQgIlBlcnNvbiIgewogICAgICAgICAgICAgICAgY29sb3IgI2ZmZmZmZgogICAgICAgICAgICAgICAgZm9udFNpemUgMjIKICAgICAgICAgICAgICAgIHNoYXBlIFBlcnNvbgogICAgICAgICAgICB9CiAgICAgICAgICAgIGVsZW1lbnQgIkN1c3RvbWVyIiB7CiAgICAgICAgICAgICAgICBiYWNrZ3JvdW5kICM2ODY4NjgKICAgICAgICAgICAgfQogICAgICAgICAgICBlbGVtZW50ICJTdGFmZiIgewogICAgICAgICAgICAgICAgYmFja2dyb3VuZCAjMDg0MjdCCiAgICAgICAgICAgIH0KICAgICAgICAgICAgZWxlbWVudCAiU29mdHdhcmUgU3lzdGVtIiB7CiAgICAgICAgICAgICAgICBiYWNrZ3JvdW5kICM5NmJkZTQgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICBjb2xvciAjZmZmZmZmCiAgICAgICAgICAgIH0KICAgICAgICAgICAgZWxlbWVudCAiSW50ZXJuYWwgU2VydmljZSIgewogICAgICAgICAgICAgICAgYmFja2dyb3VuZCAjMTE2OGJkCiAgICAgICAgICAgICAgICBvcGFjaXR5IDc1CiAgICAgICAgICAgICAgICBjb2xvciAjZmZmZmZmCiAgICAgICAgICAgIH0gICAgICAgICAgICAKICAgICAgICAgICAgZWxlbWVudCAiRXh0ZXJuYWwgU3lzdGVtIiB7CiAgICAgICAgICAgICAgICBiYWNrZ3JvdW5kICM2ODY4NjgKICAgICAgICAgICAgfQogICAgICAgICAgICBlbGVtZW50ICJFeGlzdGluZyBTeXN0ZW0iIHsKICAgICAgICAgICAgICAgIGJhY2tncm91bmQgIzk5OTk5OQogICAgICAgICAgICAgICAgY29sb3IgI2ZmZmZmZgogICAgICAgICAgICB9CiAgICAgICAgICAgIGVsZW1lbnQgIkNvbnRhaW5lciIgewogICAgICAgICAgICAgICAgYmFja2dyb3VuZCAjMTE2OGJkCiAgICAgICAgICAgICAgICBjb2xvciAjZmZmZmZmCiAgICAgICAgICAgIH0KICAgICAgICAgICAgZWxlbWVudCAiV2ViIEJyb3dzZXIiIHsKICAgICAgICAgICAgICAgIHNoYXBlIFdlYkJyb3dzZXIKICAgICAgICAgICAgfQogICAgICAgICAgICBlbGVtZW50ICJNb2JpbGUgQXBwIiB7CiAgICAgICAgICAgICAgICBzaGFwZSBNb2JpbGVEZXZpY2VMYW5kc2NhcGUKICAgICAgICAgICAgfQogICAgICAgICAgICBlbGVtZW50ICJEYXRhYmFzZSIgewogICAgICAgICAgICAgICAgc2hhcGUgQ3lsaW5kZXIKICAgICAgICAgICAgfQogICAgICAgICAgICBlbGVtZW50ICJDb21wb25lbnQiIHsKICAgICAgICAgICAgICAgIGJhY2tncm91bmQgIzExNjhiZAogICAgICAgICAgICAgICAgY29sb3IgIzAwMDAwMAogICAgICAgICAgICB9CiAgICAgICAgICAgIGVsZW1lbnQgIkZhaWxvdmVyIiB7CiAgICAgICAgICAgICAgICBvcGFjaXR5IDI1CiAgICAgICAgICAgIH0KICAgICAgICAgICAgcmVsYXRpb25zaGlwICJSZWxhdGlvbnNoaXAiIHsKICAgICAgICAgICAgICAgIGRhc2hlZCBmYWxzZQogICAgICAgICAgICB9CiAgICAgICAgICAgIHJlbGF0aW9uc2hpcCAiQXN5bmNocm9ub3VzIiB7CiAgICAgICAgICAgICAgICBkYXNoZWQgdHJ1ZQogICAgICAgICAgICB9CiAgICAgICAgfQogICAgfQp9"
+    "structurizr.dsl" : "d29ya3NwYWNlICJJbWFuYWkgVEFQIiAiVHJhZGluZyBBbmFseXRpY3MgUG9ydGFsIiB7CiAgICAhZG9jcyB3b3Jrc3BhY2UtZG9jcwogICAgIWFkcnMgd29ya3NwYWNlLWFkcnMKCiAgICBtb2RlbCB7CiAgICAgICAgcHJvcGVydGllcyB7CiAgICAgICAgICAgICJzdHJ1Y3R1cml6ci5ncm91cFNlcGFyYXRvciIgIi8iCiAgICAgICAgfQoKICAgICAgICBhcmNoZXR5cGVzIHsKICAgICAgICAgICAgc3luYyA9IC0+IHsKICAgICAgICAgICAgICAgIHRhZ3MgIlN5bmNocm9ub3VzIgogICAgICAgICAgICB9CiAgICAgICAgICAgIGh0dHBzID0gLS1zeW5jLT4gewogICAgICAgICAgICAgICAgdGVjaG5vbG9neSAiSFRUUFMiCiAgICAgICAgICAgIH0KICAgICAgICAgICAgZ1JQQyA9IC0tc3luYy0+IHsKICAgICAgICAgICAgICAgIHRlY2hub2xvZ3kgImdSUEMiCiAgICAgICAgICAgIH0KICAgICAgICAgICAgd2Vic29ja2V0ID0gLS1zeW5jLT4gewogICAgICAgICAgICAgICAgdGVjaG5vbG9neSAiV2Vic29ja2V0IgogICAgICAgICAgICB9CiAgICAgICAgICAgIGFzeW5jID0gLT4gewogICAgICAgICAgICAgICAgdGFncyAiQXN5bmNocm9ub3VzIgogICAgICAgICAgICB9CiAgICAgICAgICAgIGV2ZW50QnVzID0gLS1hc3luYy0+IHsKICAgICAgICAgICAgICAgIHRlY2hub2xvZ3kgIkthZmthL1JlZGlzIFN0cmVhbXMiCiAgICAgICAgICAgIH0KICAgICAgICAgICAgc3RyZWFtID0gLS1hc3luYy0+IHsKICAgICAgICAgICAgICAgIHRlY2hub2xvZ3kgIkthZmthIFN0cmVhbXMgZXRjIgogICAgICAgICAgICB9CiAgICAgICAgfQoKICAgICAgICBjdXN0b21lciA9IHBlcnNvbiAiQW5hbHl0aWNzIFVzZXIiICJBIHBlcnNvbiB3aG8gYWNjZXNzZXMgdGhlIFRBUCIgIkN1c3RvbWVyIgoKICAgICAgICBtYXJrZXREYXRhUHJvdmlkZXIgPSBzb2Z0d2FyZXN5c3RlbSAiTWFya2V0IERhdGEgUHJvdmlkZXIiICJBbiBleHRlcm5hbCBzeXN0ZW0gdGhhdCBzdXBwbGllcyByZWFsLXRpbWUgYW5kIGhpc3RvcmljYWwgbWFya2V0IGRhdGEuIiAiRXh0ZXJuYWwgU3lzdGVtIgoKICAgICAgICBncm91cCAiSW1hbmFpIFRBUCIgewogICAgICAgICAgICBkYXRhTWFuYWdlciA9IHBlcnNvbiAiRGF0YSBNYW5hZ2VyIiAiQSBwZXJzb24gd2hvIG1hbmFnZSBhY3R1YWwgZGF0YSBpbmZvICh1cGRhdGVzIGluc3RydW1lbnRzIG1ldGEgZXRjKSIgIlN0YWZmIgoKICAgICAgICAgICAgbWV0YURhdGFTeXN0ZW0gPSBzb2Z0d2FyZXN5c3RlbSAiTWV0YSBEYXRhIFN5c3RlbSIgIlByb3ZpZGUgbWV0YSBkYXRhIChpbnN0cnVtZW50LCAuLi4pIiB7CiAgICAgICAgICAgICAgICBpbnN0cnVtZW50UmVnaXN0cnkgPSBjb250YWluZXIgIkluc3RydW1lbnQgUmVnaXN0cnkiICJQcm92aWRlIGluc3RydW1lbnQgbWV0YSBkYXRhIiAiU3ByaW5nIEJvb3QgQXBwIiAiUHVibGljIFNlcnZpY2UiCiAgICAgICAgICAgICAgICBpbnN0cnVtZW50UmVnaXN0cnlEQiA9IGNvbnRhaW5lciAiSW5zdHJ1bWVudCBSZWdpc3RyeSBEQiIgIlN0b3JlcyBpbnN0cnVtZW50IG1ldGEgZGF0YSIgIlBvc3RncmVTUUwiICJEYXRhYmFzZSIKICAgICAgICAgICAgfQoKICAgICAgICAgICAgbWFya2V0RGF0YVN5c3RlbSA9IHNvZnR3YXJlc3lzdGVtICAiTWFya2V0IERhdGEgU3lzdGVtIiAiUHJvdmlkZSBtYXJrZXQgZGF0YSBzdHJlYW1zIChsaXZlLCByZXBsYXksIHRyYW5zZm9ybWVkLCBjb21iaW5lZCkiIHsKICAgICAgICAgICAgICAgIC8vICFhZHJzIG1hcmtldC1kYXRhLXN5c3RlbS9hZHIKICAgICAgICAgICAgICAgIC8vICFkb2NzIG1hcmtldC1kYXRhLXN5c3RlbS9kb2NzCgogICAgICAgICAgICAgICAgZ3JvdXAgIkxpdmUgRGF0YSBmbG93IiB7CiAgICAgICAgICAgICAgICAgICAgZmVlZEFkYXB0b3IgPSBjb250YWluZXIgIkZlZWQgQWRhcHRvciIgIlByb3ZpZGVyLXNwZWNpZmljIGFkYXB0b3IgKG9wZXJhdGVzIHdpdGggbWVzc2FnZXMpIiAiU3ByaW5nIEJvb3QgQXBwIiAiSW50ZXJuYWwgU2VydmljZSIKICAgICAgICAgICAgICAgICAgICBmZWVkSW5nZXN0b3IgPSBjb250YWluZXIgIkZlZWQgSW5nZXN0b3IiICJPcGVyYXRlcyB3aXRoIHByb3ZpZGVyIGFnbm9zdGljIG1lc3NhZ2VzIGFuZCBjb21iaW5lcyBpdCBpbnRvIHN0cmVhbXMgKGRhdGEgcXVhbGl0eSBnYXRlKSIgIlNwcmluZyBCb290IEFwcCIgIkludGVybmFsIFNlcnZpY2UiCiAgICAgICAgICAgICAgICB9CgogICAgICAgICAgICAgICAgZ3JvdXAgIkhpc3RvcmljYWwgRGF0YSBGbG93IiB7CiAgICAgICAgICAgICAgICAgICAgaGlzdG9yaWNhbERhdGFMb2FkZXIgPSBjb250YWluZXIgIkhpc3RvcmljYWwgRGF0YSBMb2FkZXIiICJQcm92aWRlci1zcGVjaWZpYyBsb2FkZXIvYWRhcHRvciIgIlNwcmluZyBCb290IEFwcCIgIkludGVybmFsIFNlcnZpY2UiCiAgICAgICAgICAgICAgICAgICAgaGlzdG9yaWNhbERhdGFTZXJ2aWNlID0gY29udGFpbmVyICJIaXN0b3JpY2FsIERhdGEgU2VydmljZSIgIk9wZXJhdGUgd2l0aCBjb2xsZWN0ZWQgaW1tdXRhYmxlIG1hcmtldCBkYXRhIiAiU3ByaW5nIEJvb3QgQXBwIiAiSW50ZXJuYWwgU2VydmljZSIKICAgICAgICAgICAgICAgICAgICBoaXN0b3JpY2FsRGF0YVN0b3JlID0gY29udGFpbmVyICJIaXN0b3JpY2FsIERhdGEgU3RvcmUiICJJbW11dGFibGUgZmluYWxpemVkIGRhdGEiICJTMyAvIFBhcnF1ZXQgLyBDbGlja0hvdXNlIiAiRGF0YWJhc2UsSW50ZXJuYWwgU2VydmljZSIKICAgICAgICAgICAgICAgIH0KCiAgICAgICAgICAgICAgICBzdHJlYW1Qcm92aWRlciA9IGNvbnRhaW5lciAiVW5pZmllZCBTdHJlYW0gUHJvdmlkZXIiICJDb21iaW5lcyBsaXZlL2hpc3RvcmljYWwgZGF0YSB0byBsaXZlL3JlcGxheSBzdHJlYW1zIiAiU3ByaW5nIEJvb3QgQXBwIiAiUHVibGljIFNlcnZpY2UiCiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIHZpc3VhbGl6YXRpb25TeXN0ZW0gPSBzb2Z0d2FyZXN5c3RlbSAiVmlzdWFsaXphdGlvbiBTeXN0ZW0iIHsKCiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIGFkbWluaXN0cmF0aW9uU3lzdGVtID0gc29mdHdhcmVzeXN0ZW0gIkFkbWluaXN0cmF0aW9uIFN5c3RlbSIgIlN5c3RlbSBhZG1pbmlzdGFydGlvbiAodXNlcnMsIGluc3RydW1lbnRzLCAuLi4pIiB7CgogICAgICAgICAgICB9CgogICAgICAgICAgICB1c2VyRGF0YVN5c3RlbSA9IHNvZnR3YXJlc3lzdGVtICJVc2VyIERhdGEgU3lzdGVtIiB7CgogICAgICAgICAgICB9CgogICAgICAgICAgICBzdHJhdGVneUVuZ2luZSA9IHNvZnR3YXJlc3lzdGVtICJTdHJhdGVneSBFbmdpbmUiIHsKCiAgICAgICAgICAgIH0gICAKICAgICAgICB9CgogICAgICAgIC8vIFBsYXRmb3JtCiAgICAgICAgY3VzdG9tZXIgLT4gdmlzdWFsaXphdGlvblN5c3RlbSAiV29yayB3aXRoIgogICAgICAgIGRhdGFNYW5hZ2VyIC0+IGFkbWluaXN0cmF0aW9uU3lzdGVtICJXb3JrIHdpdGgiCgogICAgICAgIGFkbWluaXN0cmF0aW9uU3lzdGVtIC0+IGluc3RydW1lbnRSZWdpc3RyeSAiVXNlcy9VcGRhdGVzIgogICAgICAgIHZpc3VhbGl6YXRpb25TeXN0ZW0gLT4gc3RyZWFtUHJvdmlkZXIgIlVzZXMiCiAgICAgICAgdmlzdWFsaXphdGlvblN5c3RlbSAtPiBpbnN0cnVtZW50UmVnaXN0cnkgIlVzZXMiCiAgICAgICAgdmlzdWFsaXphdGlvblN5c3RlbSAtPiBzdHJhdGVneUVuZ2luZSAiVXNlcyIKICAgICAgICBzdHJhdGVneUVuZ2luZSAtPiBpbnN0cnVtZW50UmVnaXN0cnkgIlVzZXMiCiAgICAgICAgc3RyYXRlZ3lFbmdpbmUgLT4gc3RyZWFtUHJvdmlkZXIgIlVzZXMiCiAgICAgICAgbWFya2V0RGF0YVN5c3RlbSAtPiBpbnN0cnVtZW50UmVnaXN0cnkgIlVzZXMiCiAgICAgICAgc3RyYXRlZ3lFbmdpbmUgLT4gdXNlckRhdGFTeXN0ZW0gIlVzZXMiCiAgICAgICAgc3RyZWFtUHJvdmlkZXIgLT4gdXNlckRhdGFTeXN0ZW0gIlVzZXMiCiAgICAgICAgdmlzdWFsaXphdGlvblN5c3RlbSAtPiB1c2VyRGF0YVN5c3RlbSAiVXNlcyIKCiAgICAgICAgZmVlZEFkYXB0b3IgLS13ZWJzb2NrZXQtPiBtYXJrZXREYXRhUHJvdmlkZXIgIkhhbmRsZSBmZWVkIgogICAgICAgIGhpc3RvcmljYWxEYXRhTG9hZGVyIC0+IG1hcmtldERhdGFQcm92aWRlciAiUmVxdWVzdCBIaXN0b3JpY2FsIERhdGEgZm9yIEluc3RydW1lbnRzIgoKICAgICAgICAvLyBNYXJrZXQgRGF0YSBTeXN0ZW0KICAgICAgICBmZWVkQWRhcHRvciAtLWV2ZW50QnVzLT4gZmVlZEluZ2VzdG9yICJTZW5kIHVuaWZpZWQgZGF0YSIKICAgICAgICBzdHJlYW1Qcm92aWRlciAtLXN0cmVhbS0+IGZlZWRJbmdlc3RvciAiQWdncmVnYXRlIHN0cmVhbXMgaW50byBMYXN0IEJhciBmb3IgY3VycmVudGx5IG9wZW5lZCBwZXJpb2RzIgogICAgICAgIAogICAgICAgIGhpc3RvcmljYWxEYXRhU2VydmljZSAtLWdSUEMtPiBoaXN0b3JpY2FsRGF0YUxvYWRlciAiUHVsbCB1bmlmaWVkIGhpc3RvcmljYWwgZGF0YSIKICAgICAgICBoaXN0b3JpY2FsRGF0YVNlcnZpY2UgLT4gaGlzdG9yaWNhbERhdGFTdG9yZSAiU3RvcmUgaW4iCiAgICAgICAgc3RyZWFtUHJvdmlkZXIgLT4gaGlzdG9yaWNhbERhdGFTZXJ2aWNlICJVc2VzIGNvbGxlY3RlZCBoaXN0b3JpY2FsIGRhdGEiCgogICAgICAgIGluc3RydW1lbnRSZWdpc3RyeSAtPiBpbnN0cnVtZW50UmVnaXN0cnlEQgogICAgfQoKICAgIHZpZXdzIHsKICAgICAgICBwcm9wZXJ0aWVzIHsKICAgICAgICAgICAgImM0cGxhbnR1bWwuZWxlbWVudFByb3BlcnRpZXMiICJ0cnVlIgogICAgICAgICAgICAiYzRwbGFudHVtbC50YWdzIiAidHJ1ZSIKICAgICAgICAgICAgImdlbmVyYXRyLnN0eWxlLmNvbG9ycy5wcmltYXJ5IiAiIzQ4NWZjNyIKICAgICAgICAgICAgImdlbmVyYXRyLnN0eWxlLmNvbG9ycy5zZWNvbmRhcnkiICIjZmZmZmZmIgogICAgICAgICAgICAiZ2VuZXJhdHIuc3R5bGUuZmF2aWNvblBhdGgiICJzaXRlL2Zhdmljb24uaWNvIgogICAgICAgICAgICAiZ2VuZXJhdHIuc3R5bGUubG9nb1BhdGgiICJzaXRlL2xvZ28ucG5nIgoKICAgICAgICAgICAgLy8gQWJzb2x1dGUgVVJMJ3MgbGlrZSAiaHR0cHM6Ly9leGFtcGxlLmNvbS9jdXN0b20uY3NzIiBhcmUgYWxzbyBzdXBwb3J0ZWQKICAgICAgICAgICAgImdlbmVyYXRyLnN0eWxlLmN1c3RvbVN0eWxlc2hlZXQiICJzaXRlL2N1c3RvbS5jc3MiCgogICAgICAgICAgICAiZ2VuZXJhdHIuc3ZnbGluay50YXJnZXQiICJfc2VsZiIKCiAgICAgICAgICAgIC8vIEZ1bGwgbGlzdCBvZiBhdmFpbGFibGUgImdlbmVyYXRyLm1hcmtkb3duLmZsZXhtYXJrLmV4dGVuc2lvbnMiCiAgICAgICAgICAgIC8vICJBYmJyZXZpYXRpb24sQWRtb25pdGlvbixBbmNob3JMaW5rLEFzaWRlLEF0dHJpYnV0ZXMsQXV0b2xpbmssRGVmaW5pdGlvbixFbW9qaSxFbnVtZXJhdGVkUmVmZXJlbmNlLEZvb3Rub3RlcyxHZm1Jc3N1ZXMsR2ZtU3RyaWtldGhyb3VnaFN1YnNjcmlwdCxHZm1UYXNrTGlzdCxHZm1Vc2VycyxHaXRMYWIsSW5zLE1hY3JvcyxNZWRpYVRhZ3MsUmVzaXphYmxlSW1hZ2UsU3VwZXJzY3JpcHQsVGFibGVzLFRhYmxlT2ZDb250ZW50cyxTaW11bGF0ZWRUYWJsZU9mQ29udGVudHMsVHlwb2dyYXBoaWMsV2lraUxpbmtzLFhXaWtpTWFjcm8sWUFNTEZyb250TWF0dGVyLFlvdVR1YmVMaW5rIgogICAgICAgICAgICAvLyBzZWUgaHR0cHM6Ly9naXRodWIuY29tL3ZzY2gvZmxleG1hcmstamF2YS93aWtpL0V4dGVuc2lvbnMKICAgICAgICAgICAgLy8gQVRURU5USU9OOgogICAgICAgICAgICAvLyAqICJnZW5lcmF0ci5tYXJrZG93bi5mbGV4bWFyay5leHRlbnNpb25zIiB2YWx1ZXMgbXVzdCBiZSBzZXBhcmF0ZWQgYnkgY29tbWEKICAgICAgICAgICAgLy8gKiBpdCdzIG5vdCBwb3NzaWJsZSB0byB1c2UgIkdpdExhYiIgYW5kICJSZXNpemFibGVJbWFnZSIgZXh0ZW5zaW9ucyB0b2dldGhlcgogICAgICAgICAgICAvLyBkZWZhdWx0IGJlaGF2aW91ciwgaWYgbm8gZ2VuZXJhdHIubWFya2Rvd24uZmxleG1hcmsuZXh0ZW5zaW9ucyBwcm9wZXJ0eSBpcyBzcGVjaWZpZWQsIGlzIHRvIGxvYWQgdGhlIFRhYmxlcyBleHRlbnNpb24gb25seQogICAgICAgICAgICAiZ2VuZXJhdHIubWFya2Rvd24uZmxleG1hcmsuZXh0ZW5zaW9ucyIgIkFiYnJldmlhdGlvbixBZG1vbml0aW9uLEFuY2hvckxpbmssQXR0cmlidXRlcyxBdXRvbGluayxEZWZpbml0aW9uLEVtb2ppLEZvb3Rub3RlcyxHZm1UYXNrTGlzdCxHaXRMYWIsTWVkaWFUYWdzLFRhYmxlcyxUYWJsZU9mQ29udGVudHMsVHlwb2dyYXBoaWMiCgogICAgICAgICAgICAiZ2VuZXJhdHIuc2l0ZS5leHBvcnRlciIgInN0cnVjdHVyaXpyIgogICAgICAgICAgICAiZ2VuZXJhdHIuc2l0ZS5leHRlcm5hbFRhZyIgIkV4dGVybmFsIFN5c3RlbSIKICAgICAgICAgICAgImdlbmVyYXRyLnNpdGUubmVzdEdyb3VwcyIgImZhbHNlIgogICAgICAgICAgICAiZ2VuZXJhdHIuc2l0ZS5jZG4iICJodHRwczovL2Nkbi5qc2RlbGl2ci5uZXQvbnBtIgogICAgICAgICAgICAiZ2VuZXJhdHIuc2l0ZS50aGVtZSIgImF1dG8iCiAgICAgICAgfQoKICAgICAgICBzeXN0ZW1sYW5kc2NhcGUgIlN5c3RlbUxhbmRzY2FwZSIgewogICAgICAgICAgICBpbmNsdWRlICoKICAgICAgICAgICAgYXV0b0xheW91dAogICAgICAgIH0KCiAgICAgICAgc3lzdGVtY29udGV4dCBtYXJrZXREYXRhU3lzdGVtICJTeXN0ZW1Db250ZXh0IiB7CiAgICAgICAgICAgIGluY2x1ZGUgKgogICAgICAgICAgICBhdXRvTGF5b3V0CiAgICAgICAgICAgIHRpdGxlICJTeXN0ZW0gQ29udGV4dCBvZiBNYXJrZXQgRGF0YSBTeXN0ZW0iCiAgICAgICAgICAgIGRlc2NyaXB0aW9uICJEZXNjcmliZXMgdGhlIG92ZXJhbGwgY29udGV4dCIKICAgICAgICB9CgogICAgICAgIGNvbnRhaW5lciBtYXJrZXREYXRhU3lzdGVtICJNRFNDb250YWluZXJzIiB7CiAgICAgICAgICAgIGluY2x1ZGUgKgogICAgICAgIH0KCiAgICAgICAgIyBmaWx0ZXJlZCAiTURTQ29udGFpbmVycyIgZXhjbHVkZSAiRGF0YWJhc2UiCgogICAgICAgIHN0eWxlcyB7CiAgICAgICAgICAgIGVsZW1lbnQgIlBlcnNvbiIgewogICAgICAgICAgICAgICAgY29sb3IgI2ZmZmZmZgogICAgICAgICAgICAgICAgZm9udFNpemUgMjIKICAgICAgICAgICAgICAgIHNoYXBlIFBlcnNvbgogICAgICAgICAgICB9CiAgICAgICAgICAgIGVsZW1lbnQgIkN1c3RvbWVyIiB7CiAgICAgICAgICAgICAgICBiYWNrZ3JvdW5kICM2ODY4NjgKICAgICAgICAgICAgfQogICAgICAgICAgICBlbGVtZW50ICJTdGFmZiIgewogICAgICAgICAgICAgICAgYmFja2dyb3VuZCAjMDg0MjdCCiAgICAgICAgICAgIH0KICAgICAgICAgICAgZWxlbWVudCAiU29mdHdhcmUgU3lzdGVtIiB7CiAgICAgICAgICAgICAgICBiYWNrZ3JvdW5kICM5NmJkZTQgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICBjb2xvciAjZmZmZmZmCiAgICAgICAgICAgIH0KICAgICAgICAgICAgZWxlbWVudCAiSW50ZXJuYWwgU2VydmljZSIgewogICAgICAgICAgICAgICAgYmFja2dyb3VuZCAjMTE2OGJkCiAgICAgICAgICAgICAgICBvcGFjaXR5IDc1CiAgICAgICAgICAgICAgICBjb2xvciAjZmZmZmZmCiAgICAgICAgICAgIH0gICAgICAgICAgICAKICAgICAgICAgICAgZWxlbWVudCAiRXh0ZXJuYWwgU3lzdGVtIiB7CiAgICAgICAgICAgICAgICBiYWNrZ3JvdW5kICM2ODY4NjgKICAgICAgICAgICAgfQogICAgICAgICAgICBlbGVtZW50ICJFeGlzdGluZyBTeXN0ZW0iIHsKICAgICAgICAgICAgICAgIGJhY2tncm91bmQgIzk5OTk5OQogICAgICAgICAgICAgICAgY29sb3IgI2ZmZmZmZgogICAgICAgICAgICB9CiAgICAgICAgICAgIGVsZW1lbnQgIkNvbnRhaW5lciIgewogICAgICAgICAgICAgICAgYmFja2dyb3VuZCAjMTE2OGJkCiAgICAgICAgICAgICAgICBjb2xvciAjZmZmZmZmCiAgICAgICAgICAgIH0KICAgICAgICAgICAgZWxlbWVudCAiV2ViIEJyb3dzZXIiIHsKICAgICAgICAgICAgICAgIHNoYXBlIFdlYkJyb3dzZXIKICAgICAgICAgICAgfQogICAgICAgICAgICBlbGVtZW50ICJNb2JpbGUgQXBwIiB7CiAgICAgICAgICAgICAgICBzaGFwZSBNb2JpbGVEZXZpY2VMYW5kc2NhcGUKICAgICAgICAgICAgfQogICAgICAgICAgICBlbGVtZW50ICJEYXRhYmFzZSIgewogICAgICAgICAgICAgICAgc2hhcGUgQ3lsaW5kZXIKICAgICAgICAgICAgfQogICAgICAgICAgICBlbGVtZW50ICJDb21wb25lbnQiIHsKICAgICAgICAgICAgICAgIGJhY2tncm91bmQgIzExNjhiZAogICAgICAgICAgICAgICAgY29sb3IgIzAwMDAwMAogICAgICAgICAgICB9CiAgICAgICAgICAgIGVsZW1lbnQgIkZhaWxvdmVyIiB7CiAgICAgICAgICAgICAgICBvcGFjaXR5IDI1CiAgICAgICAgICAgIH0KICAgICAgICAgICAgcmVsYXRpb25zaGlwICJSZWxhdGlvbnNoaXAiIHsKICAgICAgICAgICAgICAgIGRhc2hlZCBmYWxzZQogICAgICAgICAgICB9CiAgICAgICAgICAgIHJlbGF0aW9uc2hpcCAiQXN5bmNocm9ub3VzIiB7CiAgICAgICAgICAgICAgICBkYXNoZWQgdHJ1ZQogICAgICAgICAgICB9CiAgICAgICAgfQogICAgfQp9"
   },
   "views" : {
     "configuration" : {
       "branding" : { },
-      "lastSavedView" : "SystemLandscape",
+      "lastSavedView" : "MDSContainers",
       "metadataSymbols" : "SquareBrackets",
       "properties" : {
         "generatr.style.logoPath" : "site/logo.png",
@@ -445,75 +476,92 @@
     },
     "containerViews" : [ {
       "dimensions" : {
-        "height" : 2285,
+        "height" : 2393,
         "width" : 3146
       },
       "elements" : [ {
         "id" : "2",
-        "x" : 1020,
-        "y" : 1750
+        "x" : 1019,
+        "y" : 1858
       }, {
         "id" : "8",
-        "x" : 240,
-        "y" : 1250
+        "x" : 180,
+        "y" : 1325
       }, {
         "id" : "9",
-        "x" : 240,
-        "y" : 690
+        "x" : 184,
+        "y" : 798
       }, {
         "id" : "10",
-        "x" : 1814,
-        "y" : 1250
+        "x" : 1835,
+        "y" : 1325
       }, {
         "id" : "11",
-        "x" : 1814,
-        "y" : 690
+        "x" : 1829,
+        "y" : 798
       }, {
         "id" : "12",
-        "x" : 2456,
-        "y" : 690
+        "x" : 2535,
+        "y" : 798
       }, {
         "id" : "13",
-        "x" : 1020,
-        "y" : 690
+        "x" : 1019,
+        "y" : 798
       }, {
         "id" : "14",
-        "x" : 1020,
-        "y" : 175
+        "x" : 184,
+        "y" : 308
       }, {
         "id" : "16",
-        "x" : 1814,
-        "y" : 165
+        "x" : 1019,
+        "y" : 308
+      }, {
+        "id" : "17",
+        "x" : 1829,
+        "y" : 308
       } ],
       "externalSoftwareSystemBoundariesVisible" : false,
       "key" : "MDSContainers",
       "order" : 3,
       "relationships" : [ {
-        "id" : "21"
+        "id" : "22"
       }, {
-        "id" : "25"
+        "id" : "26",
+        "vertices" : [ {
+          "x" : 928,
+          "y" : 193
+        }, {
+          "x" : 1613,
+          "y" : 198
+        } ]
       }, {
-        "id" : "28"
+        "id" : "29"
       }, {
-        "id" : "32"
+        "id" : "33"
       }, {
         "id" : "34"
-      }, {
-        "id" : "35"
       }, {
         "id" : "36"
       }, {
         "id" : "37"
       }, {
-        "id" : "38"
-      }, {
         "id" : "39"
+      }, {
+        "id" : "40"
+      }, {
+        "id" : "41"
+      }, {
+        "id" : "42"
+      }, {
+        "id" : "43"
+      }, {
+        "id" : "44"
       } ],
       "softwareSystemId" : "7"
     } ],
     "systemContextViews" : [ {
       "automaticLayout" : {
-        "applied" : true,
+        "applied" : false,
         "edgeSeparation" : 0,
         "implementation" : "Graphviz",
         "nodeSeparation" : 300,
@@ -522,69 +570,61 @@
         "vertices" : false
       },
       "description" : "Describes the overall context",
-      "dimensions" : {
-        "height" : 2594,
-        "width" : 2058
-      },
       "elements" : [ {
         "id" : "2",
-        "x" : 1408,
-        "y" : 1971
+        "x" : 0,
+        "y" : 0
       }, {
         "id" : "4",
-        "x" : 220,
-        "y" : 1971
+        "x" : 0,
+        "y" : 0
       }, {
         "id" : "7",
-        "x" : 749,
-        "y" : 1371
+        "x" : 0,
+        "y" : 0
       }, {
         "id" : "14",
-        "x" : 441,
-        "y" : 171
+        "x" : 0,
+        "y" : 0
       }, {
         "id" : "16",
-        "x" : 441,
-        "y" : 771
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "17",
+        "x" : 0,
+        "y" : 0
       } ],
       "enterpriseBoundaryVisible" : true,
       "key" : "SystemContext",
       "order" : 2,
       "relationships" : [ {
-        "id" : "22",
-        "vertices" : [ {
-          "x" : 1041,
-          "y" : 771
-        }, {
-          "x" : 1041,
-          "y" : 1071
-        } ]
-      }, {
-        "id" : "24",
-        "vertices" : [ {
-          "x" : 291,
-          "y" : 771
-        }, {
-          "x" : 291,
-          "y" : 1071
-        } ]
+        "id" : "23"
       }, {
         "id" : "25"
       }, {
-        "id" : "27"
+        "id" : "26"
       }, {
-        "id" : "29"
+        "id" : "28"
       }, {
-        "id" : "31"
+        "id" : "30"
+      }, {
+        "id" : "32"
       }, {
         "id" : "33"
+      }, {
+        "id" : "35"
+      }, {
+        "id" : "36"
+      }, {
+        "id" : "38"
       } ],
       "softwareSystemId" : "7",
       "title" : "System Context of Market Data System"
     } ],
     "systemLandscapeViews" : [ {
       "automaticLayout" : {
-        "applied" : true,
+        "applied" : false,
         "edgeSeparation" : 0,
         "implementation" : "Graphviz",
         "nodeSeparation" : 300,
@@ -592,80 +632,72 @@
         "rankSeparation" : 300,
         "vertices" : false
       },
-      "dimensions" : {
-        "height" : 3374,
-        "width" : 2744
-      },
       "elements" : [ {
         "id" : "1",
-        "x" : 1101,
-        "y" : 165
+        "x" : 0,
+        "y" : 0
       }, {
         "id" : "2",
-        "x" : 2093,
-        "y" : 2765
+        "x" : 0,
+        "y" : 0
       }, {
         "id" : "3",
-        "x" : 376,
-        "y" : 1465
+        "x" : 0,
+        "y" : 0
       }, {
         "id" : "4",
-        "x" : 639,
-        "y" : 2765
+        "x" : 0,
+        "y" : 0
       }, {
         "id" : "7",
-        "x" : 1434,
-        "y" : 2165
+        "x" : 0,
+        "y" : 0
       }, {
         "id" : "14",
-        "x" : 1076,
-        "y" : 865
+        "x" : 0,
+        "y" : 0
       }, {
         "id" : "15",
-        "x" : 376,
-        "y" : 2165
+        "x" : 0,
+        "y" : 0
       }, {
         "id" : "16",
-        "x" : 1076,
-        "y" : 1515
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "17",
+        "x" : 0,
+        "y" : 0
       } ],
       "enterpriseBoundaryVisible" : true,
       "key" : "SystemLandscape",
       "order" : 1,
       "relationships" : [ {
-        "id" : "17"
-      }, {
         "id" : "18"
       }, {
-        "id" : "20"
+        "id" : "19"
       }, {
-        "id" : "22",
-        "vertices" : [ {
-          "x" : 1676,
-          "y" : 1465
-        }, {
-          "x" : 1676,
-          "y" : 1865
-        } ]
+        "id" : "21"
       }, {
-        "id" : "24",
-        "vertices" : [ {
-          "x" : 226,
-          "y" : 1465
-        }, {
-          "x" : 226,
-          "y" : 2465
-        } ]
+        "id" : "23"
       }, {
         "id" : "25"
       }, {
-        "id" : "27"
+        "id" : "26"
       }, {
-        "id" : "29"
+        "id" : "28"
       }, {
-        "id" : "31"
+        "id" : "30"
+      }, {
+        "id" : "32"
       }, {
         "id" : "33"
+      }, {
+        "id" : "35"
+      }, {
+        "id" : "36"
+      }, {
+        "id" : "38"
       } ]
     } ]
   }

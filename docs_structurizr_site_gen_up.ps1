@@ -1,6 +1,6 @@
 $WorkspaceDir = "./docs"
 $AbsolutePath = (Resolve-Path $WorkspaceDir).Path
-$LocalPort = 9876
+$LocalPort = 9877
 
 if (-not (Test-Path -Path $WorkspaceDir -PathType Container)) {
     Write-Host "Warning: The '$WorkspaceDir' folder was not found." -ForegroundColor Yellow
@@ -8,7 +8,7 @@ if (-not (Test-Path -Path $WorkspaceDir -PathType Container)) {
 }
 
 Write-Host "=============================================" -ForegroundColor Green
-Write-Host " Structurizr Lite is running in preview mode" -ForegroundColor Green
+Write-Host " Structurizr Site Gen is running in dev mode" -ForegroundColor Green
 Write-Host "=============================================" -ForegroundColor Green
 Write-Host ""
 Write-Host " Your workspace (from the $WorkspaceDir folder) is available at:" -ForegroundColor Cyan
@@ -17,8 +17,7 @@ Write-Host ""
 Write-Host "To stop the service and exit, press Ctrl+C." -ForegroundColor DarkGray
 Write-Host ""
 
-docker run -it --rm -p "$LocalPort`:8080" -v "${AbsolutePath}:/usr/local/structurizr" structurizr/lite
-docker run -it --rm -v c:/projects/c4:/var/model -p 8080:8080 ghcr.io/avisi-cloud/structurizr-site-generatr serve --workspace-file workspace.dsl --assets-dir assets
+docker run -it --rm -p "$LocalPort`:8080" -v "${AbsolutePath}:/var/model" ghcr.io/avisi-cloud/structurizr-site-generatr serve --workspace-file workspace.dsl --assets-dir assets
 
 
 Write-Host "`nService stopped. Goodbye!" -ForegroundColor Green

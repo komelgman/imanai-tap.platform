@@ -33,17 +33,17 @@ workspace "Imanai TAP" "Trading Analytics Portal" {
 
         customer = person "Analytics User" "A person who accesses the TAP" "Customer"
 
-        marketDataProvider = softwaresystem "Feed Provider" "An external system that supplies real-time and historical market data." "External System"
+        marketDataProvider = softwaresystem "Market Data Provider" "An external system that supplies real-time and historical market data." "External System"
 
         group "Imanai TAP" {
             dataManager = person "Data Manager" "A person who manage actual data info (updates instruments meta etc)" "Staff"
 
-            metaDataSystem = softwaresystem "Meta Data System" {
+            metaDataSystem = softwaresystem "Meta Data System" "Provide meta data (instrument, ...)" {
                 instrumentRegistry = container "Instrument Registry" "Provide instrument meta data" "Spring Boot App" "Public Service"
                 instrumentRegistryDB = container "Instrument Registry DB" "Stores instrument meta data" "PostgreSQL" "Database"
             }
 
-            marketDataSystem = softwaresystem  "Market Data System" {
+            marketDataSystem = softwaresystem  "Market Data System" "Provide market data streams (live, replay, transformed, combined)" {
                 // !adrs market-data-system/adr
                 // !docs market-data-system/docs
 
@@ -65,7 +65,11 @@ workspace "Imanai TAP" "Trading Analytics Portal" {
 
             }
 
-            administrationSystem = softwaresystem "Administration System" {
+            administrationSystem = softwaresystem "Administration System" "System administartion (users, instruments, ...)" {
+
+            }
+
+            userDataSystem = softwaresystem "User Data System" {
 
             }
 
@@ -85,13 +89,16 @@ workspace "Imanai TAP" "Trading Analytics Portal" {
         strategyEngine -> instrumentRegistry "Uses"
         strategyEngine -> streamProvider "Uses"
         marketDataSystem -> instrumentRegistry "Uses"
+        strategyEngine -> userDataSystem "Uses"
+        streamProvider -> userDataSystem "Uses"
+        visualizationSystem -> userDataSystem "Uses"
 
-        feedAdaptor --websocket-> marketDataProvider "Handle instrument feed"
+        feedAdaptor --websocket-> marketDataProvider "Handle feed"
         historicalDataLoader -> marketDataProvider "Request Historical Data for Instruments"
 
         // Market Data System
-        feedAdaptor --eventBus-> feedIngestor "Streams unified data to Ingestor"
-        streamProvider --stream-> feedIngestor "Uses streams to provide Last Bar for currently opened periods"
+        feedAdaptor --eventBus-> feedIngestor "Send unified data"
+        streamProvider --stream-> feedIngestor "Aggregate streams into Last Bar for currently opened periods"
         
         historicalDataService --gRPC-> historicalDataLoader "Pull unified historical data"
         historicalDataService -> historicalDataStore "Store in"
