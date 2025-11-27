@@ -51,7 +51,7 @@ project-root
 │   │       ├── data-platform.yml       # MQ, Cache, DB etc
 │   │       └── observability.yml
 │   │
-│   ├── docs                            # TBD, generic example at now
+│   ├── docs
 │   │
 │   ├── platform-services               # TBD
 │   ├── platform-config.yaml            # Config used by boostrap/compose scripts
