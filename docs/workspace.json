@@ -3,24 +3,30 @@
   "description" : "Trading Analytics Portal",
   "documentation" : {
     "decisions" : [ {
-      "content" : "# 1. Record architecture decisions\n\nDate: 2022-06-27\n\n## Status\n\nAccepted\n\n## Context\n\nWe need to record the architectural decisions made on this project.\n\n## Decision\n\nWe will use Architecture Decision Records, as [described by Michael Nygard](http://thinkrelevance.com/blog/2011/11/15/documenting-architecture-decisions).\n\n## Consequences\n\nSee Michael Nygard's article, linked above. For a lightweight ADR toolset, see Nat Pryce's [adr-tools](https://github.com/npryce/adr-tools).\n",
-      "date" : "2022-06-27T00:00:00Z",
+      "content" : "## ADR-0001: Выбор Cтартового Microservice Stack\n\n**Дата:** 16.11.2025\n\n**Статус:** Утверждено\n\n### 1. Контекст (Context)\n\nМы — стартап на ранней стадии. Наша основная цель — **быстрая проверка гипотез (Time-to-Market)**. Команда разработки не\nимеет выделенных DevOps-специалистов. Вся инфраструктура должна быть максимально простой, чтобы любой разработчик мог\nзапустить и протестировать всю систему локально, используя **Docker Compose**. При этом мы хотим сразу заложить\nархитектурные паттерны (Service Discovery, Centralized Config), чтобы избежать проблем роста \"монолита\" и упростить\nбудущую миграцию на более зрелую платформу (например, Kubernetes).\n\n### 2. Решение (Decision)\n\nМы принимаем решение использовать \"классический\" набор **Spring Cloud** в качестве нашей \"мини-платформы\", развернутый в\nвиде обычных Spring Boot-приложений:\n\n1. **Service Discovery:** `Spring Cloud Netflix Eureka`\n2. **Centralized Configuration:** `Spring Cloud Config Server` (с Git-репозиторием в качестве бэкенда)\n3. **API Gateway:** `Spring Cloud Gateway`\n\nЭти три сервиса будут запущены как обычные контейнеры в `docker-compose.yml` вместе с нашими бизнес-микросервисами.\n\n### 3. Обоснование (Rationale)\n\n* **Низкий порог входа:** Это \"просто\" еще три Spring Boot-приложения. Разработчики, знакомые со Spring, могут\n  поддерживать эту инфраструктуру без знаний Kubernetes, Consul или Istio.\n* **Самодостаточность:** Стек полностью самодостаточен. Он предоставляет все необходимые \"облачные\" паттерны (роутинг,\n  дискавери, конфигурация) \"из коробки\" и отлично работает в `docker-compose`.\n* **Идеальная интеграция:** Компоненты (`Gateway`, `Config`, `Eureka`) созданы для бесшовной работы друг с другом.\n  Например, `Spring Cloud Gateway` автоматически использует `Eureka` для обнаружения нижестоящих сервисов.\n* **Бесшовный путь миграции:** Мы \"абстрагируем\" инфраструктурные задачи. Наши бизнес-сервисы просто используют\n  аннотации (например, `@EnableDiscoveryClient`) и стандартные интерфейсы. В будущем мы сможем заменить *реализацию* (\n  Eureka, Config Server) на K8s-аналоги, **не меняя бизнес-логику**.\n\n### 4. Последствия (Consequences)\n\n* **Позитивные:**\n    * Максимально быстрый старт для команды.\n    * Вся система легко запускается локально одной командой (`docker-compose up`).\n    * Единый технологический стек (Java/Spring) для инфраструктуры и бизнес-логики.\n    * Мы избегаем \"жесткой привязки\" (hardcoding) IP-адресов и портов в конфигах.\n* **Негативные (управляемые риски):**\n    * **Ресурсы:** Три дополнительных JVM-процесса (Eureka, Config, Gateway) будут потреблять память, что может быть\n      заметно на слабых локальных машинах.\n    * **Зона ответственности:** Мы сами отвечаем за запуск и мониторинг этих \"инфра-сервисов\".\n    * **High-Load:** Этот стек не предназначен для экстремально высоких нагрузок, в отличие от K8s + Service Mesh. Это\n      сознательный компромисс в пользу скорости разработки на старте.\n\n### 5. Рассмотренные Альтернативы\n\n#### Альтернатива 1: Kubernetes (K8s)\n\n* **Описание:** Сразу начать с \"правильной\" инфраструктуры: K8s-кластер, Ingress Controller (Nginx), Service Mesh (\n  Istio/Linkerd).\n* **Причина отказа:** **Чрезмерная сложность (Overkill)**. Это требует выделенной DevOps-команды, сложной настройки\n  CI/CD и значительных затрат времени на управление кластером. Это прямо противоречит нашей цели \"быстрый\n  Time-to-Market\".\n\n#### Альтернатива 2: Монолит\n\n* **Описание:** Написать все в одном приложении.\n* **Причина отказа:** Мы сознательно выбираем микросервисы для гибкости разработки и разделения команд в будущем.\n  Монолит быстро приведет к \"большому комку грязи\" (Big Ball of Mud) и замедлит нас в среднесрочной перспективе.\n\n#### Альтернатива 3: Docker Compose + Hardcode\n\n* **Описание:** Использовать `docker-compose`, но прописать имена сервисов и порты в `application.yml` каждого сервиса.\n* **Причина отказа:** Негибко. Порождает хаос в конфигурациях. Нет централизованного управления. При добавлении нового\n  инстанса сервиса придется править конфиги вручную.\n\n---\n\n### 6. План Миграции (Migration Plan) при Росте\n\nКогда мы наймем DevOps-команду и будем готовы к переходу на **Kubernetes**, наш план миграции будет выглядеть так:\n\n| Задача                | 🏁 **Текущее Решение (Spring Cloud)** | 🚀 **Будущее Решение (Kubernetes)**               |\n|:----------------------|:--------------------------------------|:--------------------------------------------------|\n| **Service Discovery** | `Spring Cloud Netflix Eureka`         | **K8s DNS** (внутренний) + `Service`              |\n| **Configuration**     | `Spring Cloud Config Server`          | **K8s ConfigMaps** & **Secrets**                  |\n| **API Gateway**       | `Spring Cloud Gateway` (JVM)          | **Infra-level Ingress** (Nginx, Traefik, Contour) |\n| **Resilience**        | `Resilience4j` (в коде)               | **Service Mesh** (Istio/Linkerd) (прозрачно)      |\n\n**Шаги миграции (посервисно):**\n\n1. **Конфигурация:** Добавляем зависимость `spring-cloud-starter-kubernetes-config`. Она научит Spring Boot читать\n   `ConfigMaps`. Отключаем `Config Server`.\n2. **Service Discovery:** Заменяем `spring-cloud-starter-netflix-eureka` на `spring-cloud-starter-kubernetes-discovery`.\n   K8s будет рулить дискавери через DNS.\n3. **Gateway:** \"Выносим\" `Spring Cloud Gateway` за пределы кластера и заменяем его на Ingress Controller, который\n   работает на уровне L7-прокси (Go/Nginx).\n\n**Ключевой вывод:** Наши бизнес-сервисы потребуют **минимальных изменений** в\nкоде. Мы просто поменяем \"адаптеры\" Spring Cloud на K8s-нативные.\n",
+      "date" : "2025-11-26T21:54:02Z",
       "format" : "Markdown",
       "id" : "1",
-      "status" : "Accepted",
-      "title" : "Record architecture decisions"
+      "status" : "Proposed",
+      "title" : "# ADR-0001: Выбор Cтартового Microservice Stack"
     } ],
     "sections" : [ {
-      "content" : "# Trading Analytics Portal\n\nУтилита/Портал для широкого круга лиц заинтересованных в анализе долгосрочных трендов на крипто-рынке.\n\n## System Context \n\n![System Landscape Diagram](embed:SystemLandscape)\n",
-      "filename" : "01-Home.md",
+      "content" : "## Единый язык\n\n[TOC]\n\n### **Market Data Source**\n\nЛюбой источник сырых рыночных данных — включая биржи, брокеров, агрегаторов, провайдеров, внутренние пайплайны и хранилища.\nУровень ниже, чем *provider*: source хранит или генерирует данные, но не обязательно предоставляет интерфейс их систематизированного получения.\nПримеры: Binance Public Market Data endpoint, Kafka-топик trades внутри компании, файловый архив, Polygon.io raw stream.\n\n### **Market Data Provider**\n\nСервис, предоставляющий стандартизированный доступ к данным из одного или нескольких sources (REST/WS API, нормализация, ретрансляция).\nПример: Polygon.io, TwelveData, Kaiko, внутренний Normalized Market Data Service.\n\n### **Trading Venue**\n\nЛюбая площадка, на которой совершается торговля.\nХарактеристики: собственные правила торгов, спецификации инструментов, исполнение сделок, ликвидность, комиссии, типы ордеров.\nПримеры: Binance Spot, Binance Futures, Bybit Derivatives, CME, ICE, NYSE, LSE.\n\n### **Exchange**\n\nТип *venue*, где существует централизованный matching engine и формальная регуляция.\nКлассические примеры: CME, NYSE, NASDAQ.\nКриптобиржи — гибридный случай, часто не подпадают под классическое определение.\n\n### **Feed**\n\nКонкретный поток данных определённого типа:\n— trades-feed\n— orderbook/quotes-feed\n— candles-feed\n— funding-feed\n— liquidation-feed\n\nFeed может идти от одного или нескольких sources/providers.\n\n### **Instrument**\n\nТоргуемый объект с полным набором атрибутов: тикер, тип (spot, future, option), размер лота, шаг цены, дата экспирации, валюта котировки, множитель.\nПримеры: BTCUSDT, ESZ5 (S&P 500 future), ETH-PERP.\n\n### **Symbol**\n\nНаименование инструмента в рамках конкретного *venue* или *provider*.\nSymbol — это представление, а не сам объект.\nОдин и тот же инструмент может иметь разные symbols у разных venues/providers.\nПримеры:\n— Binance Spot: BTCUSDT\n— Binance Futures: BTCUSDT_PERP\n— CME: ESZ5\n— Internal: btc_usdt_spot\n\n### **Market Data Stream / Channel**\n\nЛогическое объединение нескольких feed’ов по типу или инструменту (например, “all trades for futures”, “orderbook for all spot symbols”). Часто соответствует WebSocket-каналу или Kafka-топику.\n\n### **Orderbook / Quote**\n\nОтдельный тип данных, часто выделяемый терминологически:\n— *orderbook* — агрегированное состояние стакана\n— *quotes* — best bid/ask (NBBO в регуляторных рынках)\n",
+      "filename" : "002-dictionary.md",
       "format" : "Markdown",
       "order" : 1,
+      "title" : ""
+    }, {
+      "content" : "# Trading Analytics Portal\n\nУтилита/Портал для широкого круга лиц заинтересованных в анализе долгосрочных трендов на крипто-рынке.\n\n## System Context \n\n![System Landscape Diagram](embed:SystemLandscape)\n\n## MVP\n\n* Фаза 0.\n    - Базовая имплементация клауд окружения [ADR-0001](decisions/1/) \n* Фаза 1.\n    - Метаданные инструмента, минимум необходимый для работы Historical Data Loader    \n* Фаза 2.\n    - Подключаем только одну биржу в качестве источника данных: Binance.\n    - Только 10 топовых инструментов.\n    - Клиентский интерфейс пока только для показа статистики по инструментам и текущих котировок.\n* Фаза 3.\n    - Подключить еще минимум 2 источника данных (Gate.io, ByteBit, Polonex).\n* Фаза 4.\n    - Клиентский UI, показ графиков.\n    - Работа с потоками данных:\n        - переключение между источниками; \n        - микс источников (для непрерывности истории при листинге/делистинге/релистинге с изменением номинации и названия).\n* Фаза 5. \n    - Клиентский UI, рисование примитивов, группировка (Object Tree)\n\n## Current Development\n\n### Meta Data System\n\n- [ ] Заглушка API выдающая предустановленные данные, минимум функциональности, до полного сбора требований во избежание оверинжиниринга.\n\n### Market Data System\n\n![](/pictures/structurizr-1-MarketDSContainers.png)\n\n- [ ] Загрузка и хранение исторических данных (Historical Data Flow)\n    - [ ] Решить проблему с рейт лимитами источников\n    - [ ] Выбрать механизм хранения\n\n\n",
+      "filename" : "01-Home.md",
+      "format" : "Markdown",
+      "order" : 2,
       "title" : ""
     } ]
   },
   "id" : 1,
   "lastModifiedAgent" : "structurizr-ui",
-  "lastModifiedDate" : "2025-11-24T23:11:06Z",
+  "lastModifiedDate" : "2025-11-27T00:50:57Z",
   "model" : {
     "people" : [ {
       "description" : "A person who accesses the TAP",
@@ -31,9 +37,9 @@
         "structurizr.dsl.identifier" : "customer"
       },
       "relationships" : [ {
-        "description" : "Work with",
-        "destinationId" : "14",
-        "id" : "18",
+        "description" : "Works with",
+        "destinationId" : "17",
+        "id" : "21",
         "sourceId" : "1",
         "tags" : "Relationship"
       } ],
@@ -48,9 +54,9 @@
         "structurizr.dsl.identifier" : "datamanager"
       },
       "relationships" : [ {
-        "description" : "Work with",
-        "destinationId" : "15",
-        "id" : "19",
+        "description" : "Works with",
+        "destinationId" : "18",
+        "id" : "22",
         "sourceId" : "3",
         "tags" : "Relationship"
       } ],
@@ -64,9 +70,9 @@
       "documentation" : { },
       "id" : "2",
       "location" : "Unspecified",
-      "name" : "Market Data Provider",
+      "name" : "Market Data Source",
       "properties" : {
-        "structurizr.dsl.identifier" : "marketdataprovider"
+        "structurizr.dsl.identifier" : "marketdatasource"
       },
       "tags" : "Element,Software System,External System"
     }, {
@@ -79,26 +85,91 @@
           "structurizr.dsl.identifier" : "instrumentregistry"
         },
         "relationships" : [ {
+          "description" : "Stores data",
           "destinationId" : "6",
-          "id" : "45",
+          "id" : "51",
+          "sourceId" : "5",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Caches data",
+          "destinationId" : "7",
+          "id" : "52",
           "sourceId" : "5",
           "tags" : "Relationship"
         } ],
         "tags" : "Element,Container,Public Service",
         "technology" : "Spring Boot App"
       }, {
-        "description" : "Stores instrument meta data",
         "documentation" : { },
         "id" : "6",
         "name" : "Instrument Registry DB",
         "properties" : {
           "structurizr.dsl.identifier" : "instrumentregistrydb"
         },
-        "tags" : "Element,Container,Database",
+        "tags" : "Element,Container,Database,Internal Service",
         "technology" : "PostgreSQL"
+      }, {
+        "documentation" : { },
+        "id" : "7",
+        "name" : "Instrument Registry Cache",
+        "properties" : {
+          "structurizr.dsl.identifier" : "instrumentregistrycache"
+        },
+        "tags" : "Element,Container,Cache,Internal Service",
+        "technology" : "Redis"
+      }, {
+        "description" : "Updates data automatically",
+        "documentation" : { },
+        "id" : "8",
+        "name" : "Instrument Registry Updater",
+        "properties" : {
+          "structurizr.dsl.identifier" : "instrumentregistryupdater"
+        },
+        "relationships" : [ {
+          "description" : "Scrapes data",
+          "destinationId" : "2",
+          "id" : "53",
+          "sourceId" : "8",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Updates automatically",
+          "destinationId" : "5",
+          "id" : "55",
+          "sourceId" : "8",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container,Internal Service",
+        "technology" : "Spring Boot App"
       } ],
-      "description" : "Provide meta data (instrument, ...)",
-      "documentation" : { },
+      "documentation" : {
+        "decisions" : [ {
+          "content" : "# 1. Record Internet Banking System architecture decisions\n\nDate: 2022-06-21\n\n## Status\n\nAccepted\n\n## Context\n\nWe need to record the architectural decisions made on this project.\n\n## Decision\n\nWe will use Architecture Decision Records, as [described by Michael Nygard](http://thinkrelevance.com/blog/2011/11/15/documenting-architecture-decisions).\n\n## Consequences\n\nSee Michael Nygard's article, linked above. For a lightweight ADR toolset, see Nat Pryce's [adr-tools](https://github.com/npryce/adr-tools).\n",
+          "date" : "2022-06-21T00:00:00Z",
+          "format" : "Markdown",
+          "id" : "1",
+          "status" : "Accepted",
+          "title" : "Record Internet Banking System architecture decisions"
+        } ],
+        "sections" : [ {
+          "content" : "## 🏛️ Метаданные\n\nОдна из ключевых систем проекта.\n\nМетаданные — это **справочная информация, необходимая для интерпретации рыночных данных**.\n\nВнутреннее представление данных унифицировано, но:\n- нужен маппинг внутреннего представления на внешнее (в интерфейсе, Feed Adaptor, Historical Data Loader);\n- Feed Adaptor/Historical Data Loader должны собирать данные для инструментов которые находятся в активном режиме (Instrument Status)\n\nНа текущий момент выявлена необходимость в метаданных об инструментах, в дальнейшем архитектура может быть пересмотрена\n",
+          "filename" : "0000-introduction.md",
+          "format" : "Markdown",
+          "order" : 1,
+          "title" : ""
+        }, {
+          "content" : "## Metadata для Analytics (не Trading)\n\n**Metadata для TAP = намного проще чем для trading platform. Основная задача: display formatting + symbol mapping + data availability tracking.**\n\n## ЧТО НУЖНО vs ЧТО НЕ НУЖНО\n\n### ❌ НЕ НУЖНО (trading-specific):\n\n- **Order validation specs:**\n    - Min/max order quantity\n    - Min notional value\n    - Lot size restrictions\n    - Max leverage per tier\n    - Maintenance margin rates\n\n- **Trading rules:**\n    - Rate limits per account\n    - Order type restrictions\n    - Trading hours (если есть)\n\n- **Risk parameters:**\n    - Position limits\n    - Liquidation prices\n    - Funding rate для perpetuals (если не показываем в UI)\n\n---\n\n### ✅ НУЖНО (analytics/visualization):\n\n**Базовая идентификация:**\n- Symbol (canonical: BTC/USDT)\n- Venue symbols (Binance: BTCUSDT, Kraken: XBT/USD)\n- Base asset / Quote asset\n- Instrument type (SPOT, PERPETUAL, FUTURES)\n\n**Display metadata:**\n- Human-readable name (\"Bitcoin / Tether\")\n- Venue (Binance, Bybit, Coinbase)\n- Category/tags (crypto, major, liquid)\n- Icon/logo URL\n\n**Data interpretation:**\n- Price precision (для округления в UI)\n- Volume precision\n- Tick size (для корректного отображения графиков)\n\n**Data availability:**\n- Available timeframes (1m, 5m, 1h, 1d)\n- Historical data range (from_date, to_date)\n- Status (active, delisted, suspended)\n\n---\n\n## УПРОЩЕННАЯ METADATA SCHEMA\n\n```\nInstrument {\n  // Identity\n  id: UUID\n  canonical_symbol: \"BTC/USDT\"\n  base_asset: \"BTC\"\n  quote_asset: \"USDT\"\n  instrument_type: \"SPOT\" | \"PERPETUAL\" | \"FUTURES\"\n  venue: \"binance\"\n  venue_symbol: \"BTCUSDT\"\n  \n  // Display\n  display_name: \"Bitcoin / Tether\"\n  category: \"crypto\"\n  tags: [\"major\", \"liquid\", \"high-volume\"]\n  icon_url: \"https://...\"\n  \n  // Data format\n  price_precision: 2      // для UI formatting\n  volume_precision: 3\n  tick_size: 0.01        // для графиков\n  \n  // Data availability\n  available_timeframes: [\"1m\", \"5m\", \"1h\", \"1d\"]\n  data_from: \"2020-01-01T00:00:00Z\"\n  data_to: null          // null = до сих пор активен\n  status: \"ACTIVE\"\n  \n  // Metadata\n  created_at: timestamp\n  updated_at: timestamp\n}\n```\n\n**НЕТ:**\n- ❌ min_order_qty, max_order_qty\n- ❌ min_notional\n- ❌ max_leverage\n- ❌ maintenance_margin_rate\n\n---\n\n## METADATA SYSTEM SCOPE (для TAP)\n\n**Упрощенная версия:**\n\n```\nMetadata System {\n  \n  // 1. Instrument Registry (упрощенный)\n  - Instrument specs (display + data format)\n  - Symbol mappings (canonical ↔ venue)\n  - Status tracking (active, delisted)\n  \n  // 2. Venue Registry\n  - Supported venues (Binance, Bybit, ...)\n  - Venue metadata (name, logo, website)\n  \n  // 3. Data Catalog\n  - Available instruments per venue\n  - Available timeframes per instrument\n  - Data availability windows\n  \n  // НЕТ:\n  ❌ Trading rules\n  ❌ Risk parameters\n  ❌ Order validation\n}\n```\n\n---\n\n## USE CASES для TAP Metadata\n\n### Use Case 1: User browses instruments\n```\nUser → UI: \"Покажи доступные инструменты\"\nUI → Metadata System: GET /instruments?venue=binance&status=ACTIVE\nMetadata → UI: [BTC/USDT, ETH/USDT, ...]\nUI → displays list with names, icons, categories\n```\n\n### Use Case 2: User opens chart\n```\nUser → UI: \"Открой BTC/USDT 1h chart\"\nUI → Metadata System: GET /instruments/BTC-USDT\nMetadata → UI: {price_precision: 2, tick_size: 0.1, ...}\nUI → correctly formats Y-axis (price) with precision=2\nUI → Stream Provider: subscribe to BTC/USDT candles-1h\n```\n\n### Use Case 3: Feed Adaptor normalizes symbol\n```\nFeed Adaptor receives: {\"s\": \"BTCUSDT\", ...}\nAdaptor → Metadata System (cached): lookup \"BTCUSDT\"\nMetadata → \"BTCUSDT\" (Binance) = \"BTC/USDT\" (canonical)\nAdaptor → publishes with canonical symbol\n```\n\n### Use Case 4: Historical query validation\n```\nUser → \"Дай BTC/USDT candles от 2019-01-01\"\nStream Provider → Metadata System: GET /instruments/BTC-USDT\nMetadata → {data_from: \"2020-01-01\", ...}\nStream Provider → User: \"Данные доступны только с 2020-01-01\"\n```\n\n---\n\n## METADATA SYSTEM ОСТАЕТСЯ PLATFORM SERVICE?\n\n**Вопрос:** Если только analytics, может оставить в Market Data System?\n\n**Мой ответ: ВСЁ РАВНО ВЫНЕСТИ**\n\n**Почему:**\n\n1. **Даже для analytics может быть несколько систем:**\n    - Market Data System (real-time charts)\n    - Backtesting System (strategy simulation)\n    - Reporting System (daily/monthly reports)\n    - Alert System (price alerts, anomaly detection)\n\n2. **Metadata = configuration, не data:**\n    - Market Data System = runtime data (prices, volumes)\n    - Metadata System = configuration (что показывать, как форматировать)\n    - Разная природа → разные системы\n\n3. **Разные lifecycle:**\n    - Market Data перезапускается → данные теряются (в памяти)\n    - Metadata перезапускается → нельзя потерять (нужна персистентность)\n    - Market Data может упасть → UI все равно должна показать список инструментов\n\n4. **Будущее расширение:**\n    - Сегодня: только crypto\n    - Завтра: добавляем stocks, forex\n    - Metadata управляет asset taxonomy → проще добавлять новые классы\n\n---\n\n## КРИТИЧЕСКИЙ ВОПРОС: источник metadata?\n\n**Откуда берутся данные для Metadata System?**\n\n### Вариант A: Manual entry\n- Admin UI для добавления инструментов\n- Ручное заполнение specs\n\n**Проблема:** не масштабируется (100+ instruments)\n\n### Вариант B: Sync from exchanges\n- Metadata System периодически queries exchange APIs\n- Автоматически обновляет instrument specs\n- Обнаруживает new/delisted instruments\n\n**Правильный подход для TAP**\n\n### Вариант C: Metadata Loader (отдельный сервис)\n```\nMetadata Loader (cron job):\n  - Queries exchange APIs (REST)\n  - Extracts instrument specs\n  - Normalizes to canonical format\n  - Writes to Metadata System DB\n  - Runs 1x per hour (или on-demand)\n```\n\n**Архитектура:**\n```\n[Exchange APIs] \n      ↓ REST (periodic)\n[Metadata Loader] (cron)\n      ↓ writes\n[Metadata System DB]\n      ↓ reads (cached)\n[Market Data System components]\n```\n\n---\n\n## ГРАНИЦЫ УВЕРЕННОСТИ\n\n**Что точно:**\n- ✅ Metadata для analytics проще чем для trading\n- ✅ Не нужны order validation specs, risk parameters\n- ✅ Нужны display specs, data availability, symbol mappings\n",
+          "filename" : "0001-analytics-metadata.md",
+          "format" : "Markdown",
+          "order" : 2,
+          "title" : ""
+        }, {
+          "content" : "# Instrument Statuses\n\nСтатусы инструмента — это **обязательный атрибут** в **Instrument Registry**. \nОни определяют как долгосрочный жизненный цикл актива (наличие на бирже), так и его текущую доступность для торговли.\n\nВсе сервисы (от **Feed Adaptor** до **Unified Stream Provider**) должны обращаться к Registry, чтобы определить, как обрабатывать тики для данного инструмента.\n\n## 1. Instrument Existence Status\n\nЭти статусы определяют место инструмента в **жизненном цикле (Lifecycle)** и являются относительно **статичными** (меняются редко).\n\n| Статус (UL) | Описание | Следствие для Системы |\n| :--- | :--- | :--- |\n| **LISTED / ACTIVE** | Инструмент допущен к торгам. Активно поддерживается биржей. | **Feed Adaptor** должен быть подписан на поток данных. |\n| **PRE\\_LISTED / PENDING** | Инструмент анонсирован, но торги по нему еще не начались (например, новый листинг монеты или старт фьючерса). | **Feed Adaptor** *может* быть подписан для приема первичных данных (стакан может быть пуст). |\n| **DELISTED / REMOVED** | Инструмент полностью удален с биржи. | **Feed Adaptor** должен отключиться от потока. **Historical Data Service** переводит данные в режим \"только чтение\" (архив). |\n| **EXPIRED** | Актуально только для **срочных** контрактов (фьючерсов, опционов). Контракт достиг даты экспирации и был рассчитан (settled). | Идентично `DELISTED` для торговых систем, но имеет финансовый смысл (расчет). |\n\n## 2. Trading Status\n\nЭти статусы **динамические** (могут меняться много раз в течение дня) и сообщают о текущем разрешении на исполнение ордеров. `Feed Adaptor` и `Ingestor` обязаны транслировать эти изменения.\n\n| Статус (UL) | Описание | Применение |\n| :--- | :--- | :--- |\n| **TRADING / OPEN** | Нормальный режим работы. Ордера принимаются и исполняются. | Все системы работают в штатном режиме. |\n| **HALT / SUSPENDED** | Торги временно приостановлены биржей. Причины: экстремальная волатильность, технические проблемы или регуляторные объявления. | **Strategy Engine** не должен отправлять новые ордера. Отправка ордеров вызовет ошибку. |\n| **POST\\_ONLY** | Разрешены только лимитные ордера (Maker). Маркет-ордера и немедленное исполнение (Taker) запрещены. | Используется для \"медленного\" открытия рынка или для сбора ликвидности. |\n| **BREAK** | Короткий технический перерыв (характерно для традиционных рынков, но может встречаться и в крипто-фьючерсах). | **Feed Ingestor** должен ожидать восстановления потока. |\n\n## 3. Internal System Status\n\nЭти статусы вводятся нашей системой для управления рисками и тестовыми средами, независимо от биржи.\n\n| Статус (UL) | Описание | Ответственный сервис |\n| :--- | :--- | :--- |\n| **BLOCKED / BLACKLISTED** | Инструмент технически активен на бирже, но заблокирован нашим **Risk Monitor** или **Compliance Service** из-за высокого риска или внутренних ограничений. | **Strategy Engine** и **Order Management System** должны игнорировать этот инструмент. |\n| **TEST / MOCK** | Используется только в тестовых средах. Может иметь синтетические данные. | Всегда должен быть отключен в **Production**. |\n",
+          "filename" : "0003-instrument-statuses.md",
+          "format" : "Markdown",
+          "order" : 3,
+          "title" : ""
+        } ]
+      },
       "group" : "Imanai TAP",
       "id" : "4",
       "location" : "Unspecified",
@@ -106,29 +177,50 @@
       "properties" : {
         "structurizr.dsl.identifier" : "metadatasystem"
       },
+      "relationships" : [ {
+        "description" : "Scrapes data",
+        "destinationId" : "2",
+        "id" : "54",
+        "linkedRelationshipId" : "53",
+        "sourceId" : "4"
+      } ],
       "tags" : "Element,Software System"
     }, {
       "containers" : [ {
         "description" : "Provider-specific adaptor (operates with messages)",
         "documentation" : { },
         "group" : "Live Data flow",
-        "id" : "8",
+        "id" : "10",
         "name" : "Feed Adaptor",
         "properties" : {
           "structurizr.dsl.identifier" : "feedadaptor"
         },
         "relationships" : [ {
-          "description" : "Handle feed",
+          "description" : "Handles feed",
           "destinationId" : "2",
-          "id" : "37",
-          "sourceId" : "8",
+          "id" : "39",
+          "sourceId" : "10",
           "tags" : "Relationship,Synchronous",
           "technology" : "Websocket"
         }, {
-          "description" : "Send unified data",
-          "destinationId" : "9",
-          "id" : "40",
-          "sourceId" : "8",
+          "description" : "Uses",
+          "destinationId" : "5",
+          "id" : "41",
+          "sourceId" : "10",
+          "tags" : "Relationship,Synchronous",
+          "technology" : "gRPC"
+        }, {
+          "description" : "Uses",
+          "destinationId" : "4",
+          "id" : "42",
+          "linkedRelationshipId" : "41",
+          "sourceId" : "10",
+          "technology" : "gRPC"
+        }, {
+          "description" : "Sends unified data",
+          "destinationId" : "11",
+          "id" : "46",
+          "sourceId" : "10",
           "tags" : "Relationship,Asynchronous",
           "technology" : "Kafka/Redis Streams"
         } ],
@@ -138,7 +230,7 @@
         "description" : "Operates with provider agnostic messages and combines it into streams (data quality gate)",
         "documentation" : { },
         "group" : "Live Data flow",
-        "id" : "9",
+        "id" : "11",
         "name" : "Feed Ingestor",
         "properties" : {
           "structurizr.dsl.identifier" : "feedingestor"
@@ -149,17 +241,31 @@
         "description" : "Provider-specific loader/adaptor",
         "documentation" : { },
         "group" : "Historical Data Flow",
-        "id" : "10",
+        "id" : "12",
         "name" : "Historical Data Loader",
         "properties" : {
           "structurizr.dsl.identifier" : "historicaldataloader"
         },
         "relationships" : [ {
-          "description" : "Request Historical Data for Instruments",
+          "description" : "Requests historical data for instruments",
           "destinationId" : "2",
-          "id" : "39",
-          "sourceId" : "10",
+          "id" : "40",
+          "sourceId" : "12",
           "tags" : "Relationship"
+        }, {
+          "description" : "Uses",
+          "destinationId" : "5",
+          "id" : "43",
+          "sourceId" : "12",
+          "tags" : "Relationship,Synchronous",
+          "technology" : "gRPC"
+        }, {
+          "description" : "Uses",
+          "destinationId" : "4",
+          "id" : "44",
+          "linkedRelationshipId" : "43",
+          "sourceId" : "12",
+          "technology" : "gRPC"
         } ],
         "tags" : "Element,Container,Internal Service",
         "technology" : "Spring Boot App"
@@ -167,23 +273,23 @@
         "description" : "Operate with collected immutable market data",
         "documentation" : { },
         "group" : "Historical Data Flow",
-        "id" : "11",
+        "id" : "13",
         "name" : "Historical Data Service",
         "properties" : {
           "structurizr.dsl.identifier" : "historicaldataservice"
         },
         "relationships" : [ {
-          "description" : "Pull unified historical data",
-          "destinationId" : "10",
-          "id" : "42",
-          "sourceId" : "11",
+          "description" : "Pulls unified historical data",
+          "destinationId" : "12",
+          "id" : "48",
+          "sourceId" : "13",
           "tags" : "Relationship,Synchronous",
           "technology" : "gRPC"
         }, {
-          "description" : "Store in",
-          "destinationId" : "12",
-          "id" : "43",
-          "sourceId" : "11",
+          "description" : "Stores data",
+          "destinationId" : "14",
+          "id" : "49",
+          "sourceId" : "13",
           "tags" : "Relationship"
         } ],
         "tags" : "Element,Container,Internal Service",
@@ -192,7 +298,7 @@
         "description" : "Immutable finalized data",
         "documentation" : { },
         "group" : "Historical Data Flow",
-        "id" : "12",
+        "id" : "14",
         "name" : "Historical Data Store",
         "properties" : {
           "structurizr.dsl.identifier" : "historicaldatastore"
@@ -200,40 +306,65 @@
         "tags" : "Element,Container,Database,Internal Service",
         "technology" : "S3 / Parquet / ClickHouse"
       }, {
+        "description" : "User-specific stream configuration store",
+        "documentation" : { },
+        "id" : "15",
+        "name" : "Stream Configuration Store",
+        "properties" : {
+          "structurizr.dsl.identifier" : "streamconfigurtaionstore"
+        },
+        "tags" : "Element,Container,Database,Internal Service"
+      }, {
         "description" : "Combines live/historical data to live/replay streams",
         "documentation" : { },
-        "id" : "13",
+        "id" : "16",
         "name" : "Unified Stream Provider",
         "properties" : {
-          "structurizr.dsl.identifier" : "streamprovider"
+          "structurizr.dsl.identifier" : "unifiedstreamprovider"
         },
         "relationships" : [ {
           "description" : "Uses",
-          "destinationId" : "16",
-          "id" : "34",
-          "sourceId" : "13",
+          "destinationId" : "15",
+          "id" : "45",
+          "sourceId" : "16",
           "tags" : "Relationship"
         }, {
-          "description" : "Aggregate streams into Last Bar for currently opened periods",
-          "destinationId" : "9",
-          "id" : "41",
-          "sourceId" : "13",
+          "description" : "Consumes data streams and builds the last bar for each open period",
+          "destinationId" : "11",
+          "id" : "47",
+          "sourceId" : "16",
           "tags" : "Relationship,Asynchronous",
-          "technology" : "Kafka Streams etc"
+          "technology" : "Kafka Streams"
         }, {
           "description" : "Uses collected historical data",
-          "destinationId" : "11",
-          "id" : "44",
-          "sourceId" : "13",
+          "destinationId" : "13",
+          "id" : "50",
+          "sourceId" : "16",
           "tags" : "Relationship"
         } ],
         "tags" : "Element,Container,Public Service",
         "technology" : "Spring Boot App"
       } ],
       "description" : "Provide market data streams (live, replay, transformed, combined)",
-      "documentation" : { },
+      "documentation" : {
+        "decisions" : [ {
+          "content" : "# 1. Record Internet Banking System architecture decisions\n\nDate: 2022-06-21\n\n## Status\n\nAccepted\n\n## Context\n\nWe need to record the architectural decisions made on this project.\n\n## Decision\n\nWe will use Architecture Decision Records, as [described by Michael Nygard](http://thinkrelevance.com/blog/2011/11/15/documenting-architecture-decisions).\n\n## Consequences\n\nSee Michael Nygard's article, linked above. For a lightweight ADR toolset, see Nat Pryce's [adr-tools](https://github.com/npryce/adr-tools).\n",
+          "date" : "2022-06-21T00:00:00Z",
+          "format" : "Markdown",
+          "id" : "1",
+          "status" : "Accepted",
+          "title" : "Record Internet Banking System architecture decisions"
+        } ],
+        "sections" : [ {
+          "content" : "# Description\n\nTBD\n\n",
+          "filename" : "0000-introduction.md",
+          "format" : "Markdown",
+          "order" : 1,
+          "title" : ""
+        } ]
+      },
       "group" : "Imanai TAP",
-      "id" : "7",
+      "id" : "9",
       "location" : "Unspecified",
       "name" : "Market Data System",
       "properties" : {
@@ -242,121 +373,45 @@
       "relationships" : [ {
         "description" : "Uses",
         "destinationId" : "5",
-        "id" : "31",
-        "sourceId" : "7",
+        "id" : "34",
+        "sourceId" : "9",
         "tags" : "Relationship"
       }, {
         "description" : "Uses",
         "destinationId" : "4",
-        "id" : "32",
-        "linkedRelationshipId" : "31",
-        "sourceId" : "7"
-      }, {
-        "description" : "Uses",
-        "destinationId" : "16",
         "id" : "35",
         "linkedRelationshipId" : "34",
-        "sourceId" : "7"
+        "sourceId" : "9"
       }, {
-        "description" : "Handle feed",
+        "description" : "Uses",
         "destinationId" : "2",
-        "id" : "38",
-        "linkedRelationshipId" : "37",
-        "sourceId" : "7",
-        "technology" : "Websocket"
-      } ],
-      "tags" : "Element,Software System"
-    }, {
-      "documentation" : { },
-      "group" : "Imanai TAP",
-      "id" : "14",
-      "location" : "Unspecified",
-      "name" : "Visualization System",
-      "properties" : {
-        "structurizr.dsl.identifier" : "visualizationsystem"
-      },
-      "relationships" : [ {
-        "description" : "Uses",
-        "destinationId" : "13",
-        "id" : "22",
-        "sourceId" : "14",
-        "tags" : "Relationship"
-      }, {
-        "description" : "Uses",
-        "destinationId" : "7",
-        "id" : "23",
-        "linkedRelationshipId" : "22",
-        "sourceId" : "14"
-      }, {
-        "description" : "Uses",
-        "destinationId" : "5",
-        "id" : "24",
-        "sourceId" : "14",
-        "tags" : "Relationship"
-      }, {
-        "description" : "Uses",
-        "destinationId" : "4",
-        "id" : "25",
-        "linkedRelationshipId" : "24",
-        "sourceId" : "14"
-      }, {
-        "description" : "Uses",
-        "destinationId" : "17",
-        "id" : "26",
-        "sourceId" : "14",
-        "tags" : "Relationship"
-      }, {
-        "description" : "Uses",
-        "destinationId" : "16",
         "id" : "36",
-        "sourceId" : "14",
+        "sourceId" : "9",
         "tags" : "Relationship"
       } ],
-      "tags" : "Element,Software System"
-    }, {
-      "description" : "System administartion (users, instruments, ...)",
-      "documentation" : { },
-      "group" : "Imanai TAP",
-      "id" : "15",
-      "location" : "Unspecified",
-      "name" : "Administration System",
-      "properties" : {
-        "structurizr.dsl.identifier" : "administrationsystem"
-      },
-      "relationships" : [ {
-        "description" : "Uses/Updates",
-        "destinationId" : "5",
-        "id" : "20",
-        "sourceId" : "15",
-        "tags" : "Relationship"
-      }, {
-        "description" : "Uses/Updates",
-        "destinationId" : "4",
-        "id" : "21",
-        "linkedRelationshipId" : "20",
-        "sourceId" : "15"
-      } ],
-      "tags" : "Element,Software System"
-    }, {
-      "documentation" : { },
-      "group" : "Imanai TAP",
-      "id" : "16",
-      "location" : "Unspecified",
-      "name" : "User Data System",
-      "properties" : {
-        "structurizr.dsl.identifier" : "userdatasystem"
-      },
       "tags" : "Element,Software System"
     }, {
       "documentation" : { },
       "group" : "Imanai TAP",
       "id" : "17",
       "location" : "Unspecified",
-      "name" : "Strategy Engine",
+      "name" : "Visualization",
       "properties" : {
-        "structurizr.dsl.identifier" : "strategyengine"
+        "structurizr.dsl.identifier" : "visualizationsystem"
       },
       "relationships" : [ {
+        "description" : "Uses",
+        "destinationId" : "16",
+        "id" : "25",
+        "sourceId" : "17",
+        "tags" : "Relationship"
+      }, {
+        "description" : "Uses",
+        "destinationId" : "9",
+        "id" : "26",
+        "linkedRelationshipId" : "25",
+        "sourceId" : "17"
+      }, {
         "description" : "Uses",
         "destinationId" : "5",
         "id" : "27",
@@ -370,21 +425,90 @@
         "sourceId" : "17"
       }, {
         "description" : "Uses",
-        "destinationId" : "13",
+        "destinationId" : "20",
         "id" : "29",
         "sourceId" : "17",
         "tags" : "Relationship"
       }, {
         "description" : "Uses",
-        "destinationId" : "7",
+        "destinationId" : "19",
+        "id" : "38",
+        "sourceId" : "17",
+        "tags" : "Relationship"
+      } ],
+      "tags" : "Element,Software System"
+    }, {
+      "description" : "System administartion (users, instruments, ...)",
+      "documentation" : { },
+      "group" : "Imanai TAP",
+      "id" : "18",
+      "location" : "Unspecified",
+      "name" : "Administration System",
+      "properties" : {
+        "structurizr.dsl.identifier" : "administrationsystem"
+      },
+      "relationships" : [ {
+        "description" : "Manual Updates",
+        "destinationId" : "5",
+        "id" : "23",
+        "sourceId" : "18",
+        "tags" : "Relationship"
+      }, {
+        "description" : "Manual Updates",
+        "destinationId" : "4",
+        "id" : "24",
+        "linkedRelationshipId" : "23",
+        "sourceId" : "18"
+      } ],
+      "tags" : "Element,Software System"
+    }, {
+      "documentation" : { },
+      "group" : "Imanai TAP",
+      "id" : "19",
+      "location" : "Unspecified",
+      "name" : "User Data System",
+      "properties" : {
+        "structurizr.dsl.identifier" : "userdatasystem"
+      },
+      "tags" : "Element,Software System"
+    }, {
+      "documentation" : { },
+      "group" : "Imanai TAP",
+      "id" : "20",
+      "location" : "Unspecified",
+      "name" : "Strategy Engine",
+      "properties" : {
+        "structurizr.dsl.identifier" : "strategyengine"
+      },
+      "relationships" : [ {
+        "description" : "Uses",
+        "destinationId" : "5",
         "id" : "30",
-        "linkedRelationshipId" : "29",
-        "sourceId" : "17"
+        "sourceId" : "20",
+        "tags" : "Relationship"
+      }, {
+        "description" : "Uses",
+        "destinationId" : "4",
+        "id" : "31",
+        "linkedRelationshipId" : "30",
+        "sourceId" : "20"
       }, {
         "description" : "Uses",
         "destinationId" : "16",
+        "id" : "32",
+        "sourceId" : "20",
+        "tags" : "Relationship"
+      }, {
+        "description" : "Uses",
+        "destinationId" : "9",
         "id" : "33",
-        "sourceId" : "17",
+        "linkedRelationshipId" : "32",
+        "sourceId" : "20"
+      }, {
+        "description" : "Uses",
+        "destinationId" : "19",
+        "id" : "37",
+        "sourceId" : "20",
         "tags" : "Relationship"
       } ],
       "tags" : "Element,Software System"
@@ -392,12 +516,12 @@
   },
   "name" : "Imanai TAP",
   "properties" : {
-    "structurizr.dsl" : "d29ya3NwYWNlICJJbWFuYWkgVEFQIiAiVHJhZGluZyBBbmFseXRpY3MgUG9ydGFsIiB7CiAgICAhZG9jcyB3b3Jrc3BhY2UtZG9jcwogICAgIWFkcnMgd29ya3NwYWNlLWFkcnMKCiAgICBtb2RlbCB7CiAgICAgICAgcHJvcGVydGllcyB7CiAgICAgICAgICAgICJzdHJ1Y3R1cml6ci5ncm91cFNlcGFyYXRvciIgIi8iCiAgICAgICAgfQoKICAgICAgICBhcmNoZXR5cGVzIHsKICAgICAgICAgICAgc3luYyA9IC0+IHsKICAgICAgICAgICAgICAgIHRhZ3MgIlN5bmNocm9ub3VzIgogICAgICAgICAgICB9CiAgICAgICAgICAgIGh0dHBzID0gLS1zeW5jLT4gewogICAgICAgICAgICAgICAgdGVjaG5vbG9neSAiSFRUUFMiCiAgICAgICAgICAgIH0KICAgICAgICAgICAgZ1JQQyA9IC0tc3luYy0+IHsKICAgICAgICAgICAgICAgIHRlY2hub2xvZ3kgImdSUEMiCiAgICAgICAgICAgIH0KICAgICAgICAgICAgd2Vic29ja2V0ID0gLS1zeW5jLT4gewogICAgICAgICAgICAgICAgdGVjaG5vbG9neSAiV2Vic29ja2V0IgogICAgICAgICAgICB9CiAgICAgICAgICAgIGFzeW5jID0gLT4gewogICAgICAgICAgICAgICAgdGFncyAiQXN5bmNocm9ub3VzIgogICAgICAgICAgICB9CiAgICAgICAgICAgIGV2ZW50QnVzID0gLS1hc3luYy0+IHsKICAgICAgICAgICAgICAgIHRlY2hub2xvZ3kgIkthZmthL1JlZGlzIFN0cmVhbXMiCiAgICAgICAgICAgIH0KICAgICAgICAgICAgc3RyZWFtID0gLS1hc3luYy0+IHsKICAgICAgICAgICAgICAgIHRlY2hub2xvZ3kgIkthZmthIFN0cmVhbXMgZXRjIgogICAgICAgICAgICB9CiAgICAgICAgfQoKICAgICAgICBjdXN0b21lciA9IHBlcnNvbiAiQW5hbHl0aWNzIFVzZXIiICJBIHBlcnNvbiB3aG8gYWNjZXNzZXMgdGhlIFRBUCIgIkN1c3RvbWVyIgoKICAgICAgICBtYXJrZXREYXRhUHJvdmlkZXIgPSBzb2Z0d2FyZXN5c3RlbSAiTWFya2V0IERhdGEgUHJvdmlkZXIiICJBbiBleHRlcm5hbCBzeXN0ZW0gdGhhdCBzdXBwbGllcyByZWFsLXRpbWUgYW5kIGhpc3RvcmljYWwgbWFya2V0IGRhdGEuIiAiRXh0ZXJuYWwgU3lzdGVtIgoKICAgICAgICBncm91cCAiSW1hbmFpIFRBUCIgewogICAgICAgICAgICBkYXRhTWFuYWdlciA9IHBlcnNvbiAiRGF0YSBNYW5hZ2VyIiAiQSBwZXJzb24gd2hvIG1hbmFnZSBhY3R1YWwgZGF0YSBpbmZvICh1cGRhdGVzIGluc3RydW1lbnRzIG1ldGEgZXRjKSIgIlN0YWZmIgoKICAgICAgICAgICAgbWV0YURhdGFTeXN0ZW0gPSBzb2Z0d2FyZXN5c3RlbSAiTWV0YSBEYXRhIFN5c3RlbSIgIlByb3ZpZGUgbWV0YSBkYXRhIChpbnN0cnVtZW50LCAuLi4pIiB7CiAgICAgICAgICAgICAgICBpbnN0cnVtZW50UmVnaXN0cnkgPSBjb250YWluZXIgIkluc3RydW1lbnQgUmVnaXN0cnkiICJQcm92aWRlIGluc3RydW1lbnQgbWV0YSBkYXRhIiAiU3ByaW5nIEJvb3QgQXBwIiAiUHVibGljIFNlcnZpY2UiCiAgICAgICAgICAgICAgICBpbnN0cnVtZW50UmVnaXN0cnlEQiA9IGNvbnRhaW5lciAiSW5zdHJ1bWVudCBSZWdpc3RyeSBEQiIgIlN0b3JlcyBpbnN0cnVtZW50IG1ldGEgZGF0YSIgIlBvc3RncmVTUUwiICJEYXRhYmFzZSIKICAgICAgICAgICAgfQoKICAgICAgICAgICAgbWFya2V0RGF0YVN5c3RlbSA9IHNvZnR3YXJlc3lzdGVtICAiTWFya2V0IERhdGEgU3lzdGVtIiAiUHJvdmlkZSBtYXJrZXQgZGF0YSBzdHJlYW1zIChsaXZlLCByZXBsYXksIHRyYW5zZm9ybWVkLCBjb21iaW5lZCkiIHsKICAgICAgICAgICAgICAgIC8vICFhZHJzIG1hcmtldC1kYXRhLXN5c3RlbS9hZHIKICAgICAgICAgICAgICAgIC8vICFkb2NzIG1hcmtldC1kYXRhLXN5c3RlbS9kb2NzCgogICAgICAgICAgICAgICAgZ3JvdXAgIkxpdmUgRGF0YSBmbG93IiB7CiAgICAgICAgICAgICAgICAgICAgZmVlZEFkYXB0b3IgPSBjb250YWluZXIgIkZlZWQgQWRhcHRvciIgIlByb3ZpZGVyLXNwZWNpZmljIGFkYXB0b3IgKG9wZXJhdGVzIHdpdGggbWVzc2FnZXMpIiAiU3ByaW5nIEJvb3QgQXBwIiAiSW50ZXJuYWwgU2VydmljZSIKICAgICAgICAgICAgICAgICAgICBmZWVkSW5nZXN0b3IgPSBjb250YWluZXIgIkZlZWQgSW5nZXN0b3IiICJPcGVyYXRlcyB3aXRoIHByb3ZpZGVyIGFnbm9zdGljIG1lc3NhZ2VzIGFuZCBjb21iaW5lcyBpdCBpbnRvIHN0cmVhbXMgKGRhdGEgcXVhbGl0eSBnYXRlKSIgIlNwcmluZyBCb290IEFwcCIgIkludGVybmFsIFNlcnZpY2UiCiAgICAgICAgICAgICAgICB9CgogICAgICAgICAgICAgICAgZ3JvdXAgIkhpc3RvcmljYWwgRGF0YSBGbG93IiB7CiAgICAgICAgICAgICAgICAgICAgaGlzdG9yaWNhbERhdGFMb2FkZXIgPSBjb250YWluZXIgIkhpc3RvcmljYWwgRGF0YSBMb2FkZXIiICJQcm92aWRlci1zcGVjaWZpYyBsb2FkZXIvYWRhcHRvciIgIlNwcmluZyBCb290IEFwcCIgIkludGVybmFsIFNlcnZpY2UiCiAgICAgICAgICAgICAgICAgICAgaGlzdG9yaWNhbERhdGFTZXJ2aWNlID0gY29udGFpbmVyICJIaXN0b3JpY2FsIERhdGEgU2VydmljZSIgIk9wZXJhdGUgd2l0aCBjb2xsZWN0ZWQgaW1tdXRhYmxlIG1hcmtldCBkYXRhIiAiU3ByaW5nIEJvb3QgQXBwIiAiSW50ZXJuYWwgU2VydmljZSIKICAgICAgICAgICAgICAgICAgICBoaXN0b3JpY2FsRGF0YVN0b3JlID0gY29udGFpbmVyICJIaXN0b3JpY2FsIERhdGEgU3RvcmUiICJJbW11dGFibGUgZmluYWxpemVkIGRhdGEiICJTMyAvIFBhcnF1ZXQgLyBDbGlja0hvdXNlIiAiRGF0YWJhc2UsSW50ZXJuYWwgU2VydmljZSIKICAgICAgICAgICAgICAgIH0KCiAgICAgICAgICAgICAgICBzdHJlYW1Qcm92aWRlciA9IGNvbnRhaW5lciAiVW5pZmllZCBTdHJlYW0gUHJvdmlkZXIiICJDb21iaW5lcyBsaXZlL2hpc3RvcmljYWwgZGF0YSB0byBsaXZlL3JlcGxheSBzdHJlYW1zIiAiU3ByaW5nIEJvb3QgQXBwIiAiUHVibGljIFNlcnZpY2UiCiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIHZpc3VhbGl6YXRpb25TeXN0ZW0gPSBzb2Z0d2FyZXN5c3RlbSAiVmlzdWFsaXphdGlvbiBTeXN0ZW0iIHsKCiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIGFkbWluaXN0cmF0aW9uU3lzdGVtID0gc29mdHdhcmVzeXN0ZW0gIkFkbWluaXN0cmF0aW9uIFN5c3RlbSIgIlN5c3RlbSBhZG1pbmlzdGFydGlvbiAodXNlcnMsIGluc3RydW1lbnRzLCAuLi4pIiB7CgogICAgICAgICAgICB9CgogICAgICAgICAgICB1c2VyRGF0YVN5c3RlbSA9IHNvZnR3YXJlc3lzdGVtICJVc2VyIERhdGEgU3lzdGVtIiB7CgogICAgICAgICAgICB9CgogICAgICAgICAgICBzdHJhdGVneUVuZ2luZSA9IHNvZnR3YXJlc3lzdGVtICJTdHJhdGVneSBFbmdpbmUiIHsKCiAgICAgICAgICAgIH0gICAKICAgICAgICB9CgogICAgICAgIC8vIFBsYXRmb3JtCiAgICAgICAgY3VzdG9tZXIgLT4gdmlzdWFsaXphdGlvblN5c3RlbSAiV29yayB3aXRoIgogICAgICAgIGRhdGFNYW5hZ2VyIC0+IGFkbWluaXN0cmF0aW9uU3lzdGVtICJXb3JrIHdpdGgiCgogICAgICAgIGFkbWluaXN0cmF0aW9uU3lzdGVtIC0+IGluc3RydW1lbnRSZWdpc3RyeSAiVXNlcy9VcGRhdGVzIgogICAgICAgIHZpc3VhbGl6YXRpb25TeXN0ZW0gLT4gc3RyZWFtUHJvdmlkZXIgIlVzZXMiCiAgICAgICAgdmlzdWFsaXphdGlvblN5c3RlbSAtPiBpbnN0cnVtZW50UmVnaXN0cnkgIlVzZXMiCiAgICAgICAgdmlzdWFsaXphdGlvblN5c3RlbSAtPiBzdHJhdGVneUVuZ2luZSAiVXNlcyIKICAgICAgICBzdHJhdGVneUVuZ2luZSAtPiBpbnN0cnVtZW50UmVnaXN0cnkgIlVzZXMiCiAgICAgICAgc3RyYXRlZ3lFbmdpbmUgLT4gc3RyZWFtUHJvdmlkZXIgIlVzZXMiCiAgICAgICAgbWFya2V0RGF0YVN5c3RlbSAtPiBpbnN0cnVtZW50UmVnaXN0cnkgIlVzZXMiCiAgICAgICAgc3RyYXRlZ3lFbmdpbmUgLT4gdXNlckRhdGFTeXN0ZW0gIlVzZXMiCiAgICAgICAgc3RyZWFtUHJvdmlkZXIgLT4gdXNlckRhdGFTeXN0ZW0gIlVzZXMiCiAgICAgICAgdmlzdWFsaXphdGlvblN5c3RlbSAtPiB1c2VyRGF0YVN5c3RlbSAiVXNlcyIKCiAgICAgICAgZmVlZEFkYXB0b3IgLS13ZWJzb2NrZXQtPiBtYXJrZXREYXRhUHJvdmlkZXIgIkhhbmRsZSBmZWVkIgogICAgICAgIGhpc3RvcmljYWxEYXRhTG9hZGVyIC0+IG1hcmtldERhdGFQcm92aWRlciAiUmVxdWVzdCBIaXN0b3JpY2FsIERhdGEgZm9yIEluc3RydW1lbnRzIgoKICAgICAgICAvLyBNYXJrZXQgRGF0YSBTeXN0ZW0KICAgICAgICBmZWVkQWRhcHRvciAtLWV2ZW50QnVzLT4gZmVlZEluZ2VzdG9yICJTZW5kIHVuaWZpZWQgZGF0YSIKICAgICAgICBzdHJlYW1Qcm92aWRlciAtLXN0cmVhbS0+IGZlZWRJbmdlc3RvciAiQWdncmVnYXRlIHN0cmVhbXMgaW50byBMYXN0IEJhciBmb3IgY3VycmVudGx5IG9wZW5lZCBwZXJpb2RzIgogICAgICAgIAogICAgICAgIGhpc3RvcmljYWxEYXRhU2VydmljZSAtLWdSUEMtPiBoaXN0b3JpY2FsRGF0YUxvYWRlciAiUHVsbCB1bmlmaWVkIGhpc3RvcmljYWwgZGF0YSIKICAgICAgICBoaXN0b3JpY2FsRGF0YVNlcnZpY2UgLT4gaGlzdG9yaWNhbERhdGFTdG9yZSAiU3RvcmUgaW4iCiAgICAgICAgc3RyZWFtUHJvdmlkZXIgLT4gaGlzdG9yaWNhbERhdGFTZXJ2aWNlICJVc2VzIGNvbGxlY3RlZCBoaXN0b3JpY2FsIGRhdGEiCgogICAgICAgIGluc3RydW1lbnRSZWdpc3RyeSAtPiBpbnN0cnVtZW50UmVnaXN0cnlEQgogICAgfQoKICAgIHZpZXdzIHsKICAgICAgICBwcm9wZXJ0aWVzIHsKICAgICAgICAgICAgImM0cGxhbnR1bWwuZWxlbWVudFByb3BlcnRpZXMiICJ0cnVlIgogICAgICAgICAgICAiYzRwbGFudHVtbC50YWdzIiAidHJ1ZSIKICAgICAgICAgICAgImdlbmVyYXRyLnN0eWxlLmNvbG9ycy5wcmltYXJ5IiAiIzQ4NWZjNyIKICAgICAgICAgICAgImdlbmVyYXRyLnN0eWxlLmNvbG9ycy5zZWNvbmRhcnkiICIjZmZmZmZmIgogICAgICAgICAgICAiZ2VuZXJhdHIuc3R5bGUuZmF2aWNvblBhdGgiICJzaXRlL2Zhdmljb24uaWNvIgogICAgICAgICAgICAiZ2VuZXJhdHIuc3R5bGUubG9nb1BhdGgiICJzaXRlL2xvZ28ucG5nIgoKICAgICAgICAgICAgLy8gQWJzb2x1dGUgVVJMJ3MgbGlrZSAiaHR0cHM6Ly9leGFtcGxlLmNvbS9jdXN0b20uY3NzIiBhcmUgYWxzbyBzdXBwb3J0ZWQKICAgICAgICAgICAgImdlbmVyYXRyLnN0eWxlLmN1c3RvbVN0eWxlc2hlZXQiICJzaXRlL2N1c3RvbS5jc3MiCgogICAgICAgICAgICAiZ2VuZXJhdHIuc3ZnbGluay50YXJnZXQiICJfc2VsZiIKCiAgICAgICAgICAgIC8vIEZ1bGwgbGlzdCBvZiBhdmFpbGFibGUgImdlbmVyYXRyLm1hcmtkb3duLmZsZXhtYXJrLmV4dGVuc2lvbnMiCiAgICAgICAgICAgIC8vICJBYmJyZXZpYXRpb24sQWRtb25pdGlvbixBbmNob3JMaW5rLEFzaWRlLEF0dHJpYnV0ZXMsQXV0b2xpbmssRGVmaW5pdGlvbixFbW9qaSxFbnVtZXJhdGVkUmVmZXJlbmNlLEZvb3Rub3RlcyxHZm1Jc3N1ZXMsR2ZtU3RyaWtldGhyb3VnaFN1YnNjcmlwdCxHZm1UYXNrTGlzdCxHZm1Vc2VycyxHaXRMYWIsSW5zLE1hY3JvcyxNZWRpYVRhZ3MsUmVzaXphYmxlSW1hZ2UsU3VwZXJzY3JpcHQsVGFibGVzLFRhYmxlT2ZDb250ZW50cyxTaW11bGF0ZWRUYWJsZU9mQ29udGVudHMsVHlwb2dyYXBoaWMsV2lraUxpbmtzLFhXaWtpTWFjcm8sWUFNTEZyb250TWF0dGVyLFlvdVR1YmVMaW5rIgogICAgICAgICAgICAvLyBzZWUgaHR0cHM6Ly9naXRodWIuY29tL3ZzY2gvZmxleG1hcmstamF2YS93aWtpL0V4dGVuc2lvbnMKICAgICAgICAgICAgLy8gQVRURU5USU9OOgogICAgICAgICAgICAvLyAqICJnZW5lcmF0ci5tYXJrZG93bi5mbGV4bWFyay5leHRlbnNpb25zIiB2YWx1ZXMgbXVzdCBiZSBzZXBhcmF0ZWQgYnkgY29tbWEKICAgICAgICAgICAgLy8gKiBpdCdzIG5vdCBwb3NzaWJsZSB0byB1c2UgIkdpdExhYiIgYW5kICJSZXNpemFibGVJbWFnZSIgZXh0ZW5zaW9ucyB0b2dldGhlcgogICAgICAgICAgICAvLyBkZWZhdWx0IGJlaGF2aW91ciwgaWYgbm8gZ2VuZXJhdHIubWFya2Rvd24uZmxleG1hcmsuZXh0ZW5zaW9ucyBwcm9wZXJ0eSBpcyBzcGVjaWZpZWQsIGlzIHRvIGxvYWQgdGhlIFRhYmxlcyBleHRlbnNpb24gb25seQogICAgICAgICAgICAiZ2VuZXJhdHIubWFya2Rvd24uZmxleG1hcmsuZXh0ZW5zaW9ucyIgIkFiYnJldmlhdGlvbixBZG1vbml0aW9uLEFuY2hvckxpbmssQXR0cmlidXRlcyxBdXRvbGluayxEZWZpbml0aW9uLEVtb2ppLEZvb3Rub3RlcyxHZm1UYXNrTGlzdCxHaXRMYWIsTWVkaWFUYWdzLFRhYmxlcyxUYWJsZU9mQ29udGVudHMsVHlwb2dyYXBoaWMiCgogICAgICAgICAgICAiZ2VuZXJhdHIuc2l0ZS5leHBvcnRlciIgInN0cnVjdHVyaXpyIgogICAgICAgICAgICAiZ2VuZXJhdHIuc2l0ZS5leHRlcm5hbFRhZyIgIkV4dGVybmFsIFN5c3RlbSIKICAgICAgICAgICAgImdlbmVyYXRyLnNpdGUubmVzdEdyb3VwcyIgImZhbHNlIgogICAgICAgICAgICAiZ2VuZXJhdHIuc2l0ZS5jZG4iICJodHRwczovL2Nkbi5qc2RlbGl2ci5uZXQvbnBtIgogICAgICAgICAgICAiZ2VuZXJhdHIuc2l0ZS50aGVtZSIgImF1dG8iCiAgICAgICAgfQoKICAgICAgICBzeXN0ZW1sYW5kc2NhcGUgIlN5c3RlbUxhbmRzY2FwZSIgewogICAgICAgICAgICBpbmNsdWRlICoKICAgICAgICAgICAgYXV0b0xheW91dAogICAgICAgIH0KCiAgICAgICAgc3lzdGVtY29udGV4dCBtYXJrZXREYXRhU3lzdGVtICJTeXN0ZW1Db250ZXh0IiB7CiAgICAgICAgICAgIGluY2x1ZGUgKgogICAgICAgICAgICBhdXRvTGF5b3V0CiAgICAgICAgICAgIHRpdGxlICJTeXN0ZW0gQ29udGV4dCBvZiBNYXJrZXQgRGF0YSBTeXN0ZW0iCiAgICAgICAgICAgIGRlc2NyaXB0aW9uICJEZXNjcmliZXMgdGhlIG92ZXJhbGwgY29udGV4dCIKICAgICAgICB9CgogICAgICAgIGNvbnRhaW5lciBtYXJrZXREYXRhU3lzdGVtICJNRFNDb250YWluZXJzIiB7CiAgICAgICAgICAgIGluY2x1ZGUgKgogICAgICAgIH0KCiAgICAgICAgIyBmaWx0ZXJlZCAiTURTQ29udGFpbmVycyIgZXhjbHVkZSAiRGF0YWJhc2UiCgogICAgICAgIHN0eWxlcyB7CiAgICAgICAgICAgIGVsZW1lbnQgIlBlcnNvbiIgewogICAgICAgICAgICAgICAgY29sb3IgI2ZmZmZmZgogICAgICAgICAgICAgICAgZm9udFNpemUgMjIKICAgICAgICAgICAgICAgIHNoYXBlIFBlcnNvbgogICAgICAgICAgICB9CiAgICAgICAgICAgIGVsZW1lbnQgIkN1c3RvbWVyIiB7CiAgICAgICAgICAgICAgICBiYWNrZ3JvdW5kICM2ODY4NjgKICAgICAgICAgICAgfQogICAgICAgICAgICBlbGVtZW50ICJTdGFmZiIgewogICAgICAgICAgICAgICAgYmFja2dyb3VuZCAjMDg0MjdCCiAgICAgICAgICAgIH0KICAgICAgICAgICAgZWxlbWVudCAiU29mdHdhcmUgU3lzdGVtIiB7CiAgICAgICAgICAgICAgICBiYWNrZ3JvdW5kICM5NmJkZTQgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICBjb2xvciAjZmZmZmZmCiAgICAgICAgICAgIH0KICAgICAgICAgICAgZWxlbWVudCAiSW50ZXJuYWwgU2VydmljZSIgewogICAgICAgICAgICAgICAgYmFja2dyb3VuZCAjMTE2OGJkCiAgICAgICAgICAgICAgICBvcGFjaXR5IDc1CiAgICAgICAgICAgICAgICBjb2xvciAjZmZmZmZmCiAgICAgICAgICAgIH0gICAgICAgICAgICAKICAgICAgICAgICAgZWxlbWVudCAiRXh0ZXJuYWwgU3lzdGVtIiB7CiAgICAgICAgICAgICAgICBiYWNrZ3JvdW5kICM2ODY4NjgKICAgICAgICAgICAgfQogICAgICAgICAgICBlbGVtZW50ICJFeGlzdGluZyBTeXN0ZW0iIHsKICAgICAgICAgICAgICAgIGJhY2tncm91bmQgIzk5OTk5OQogICAgICAgICAgICAgICAgY29sb3IgI2ZmZmZmZgogICAgICAgICAgICB9CiAgICAgICAgICAgIGVsZW1lbnQgIkNvbnRhaW5lciIgewogICAgICAgICAgICAgICAgYmFja2dyb3VuZCAjMTE2OGJkCiAgICAgICAgICAgICAgICBjb2xvciAjZmZmZmZmCiAgICAgICAgICAgIH0KICAgICAgICAgICAgZWxlbWVudCAiV2ViIEJyb3dzZXIiIHsKICAgICAgICAgICAgICAgIHNoYXBlIFdlYkJyb3dzZXIKICAgICAgICAgICAgfQogICAgICAgICAgICBlbGVtZW50ICJNb2JpbGUgQXBwIiB7CiAgICAgICAgICAgICAgICBzaGFwZSBNb2JpbGVEZXZpY2VMYW5kc2NhcGUKICAgICAgICAgICAgfQogICAgICAgICAgICBlbGVtZW50ICJEYXRhYmFzZSIgewogICAgICAgICAgICAgICAgc2hhcGUgQ3lsaW5kZXIKICAgICAgICAgICAgfQogICAgICAgICAgICBlbGVtZW50ICJDb21wb25lbnQiIHsKICAgICAgICAgICAgICAgIGJhY2tncm91bmQgIzExNjhiZAogICAgICAgICAgICAgICAgY29sb3IgIzAwMDAwMAogICAgICAgICAgICB9CiAgICAgICAgICAgIGVsZW1lbnQgIkZhaWxvdmVyIiB7CiAgICAgICAgICAgICAgICBvcGFjaXR5IDI1CiAgICAgICAgICAgIH0KICAgICAgICAgICAgcmVsYXRpb25zaGlwICJSZWxhdGlvbnNoaXAiIHsKICAgICAgICAgICAgICAgIGRhc2hlZCBmYWxzZQogICAgICAgICAgICB9CiAgICAgICAgICAgIHJlbGF0aW9uc2hpcCAiQXN5bmNocm9ub3VzIiB7CiAgICAgICAgICAgICAgICBkYXNoZWQgdHJ1ZQogICAgICAgICAgICB9CiAgICAgICAgfQogICAgfQp9"
+    "structurizr.dsl" : "d29ya3NwYWNlICJJbWFuYWkgVEFQIiAiVHJhZGluZyBBbmFseXRpY3MgUG9ydGFsIiB7CiAgICAhZG9jcyB3b3Jrc3BhY2UtZG9jcwogICAgIWFkcnMgd29ya3NwYWNlLWFkcnMKCiAgICBtb2RlbCB7CiAgICAgICAgcHJvcGVydGllcyB7CiAgICAgICAgICAgICJzdHJ1Y3R1cml6ci5ncm91cFNlcGFyYXRvciIgIi8iCiAgICAgICAgfQoKICAgICAgICBhcmNoZXR5cGVzIHsKICAgICAgICAgICAgc3luYyA9IC0+IHsKICAgICAgICAgICAgICAgIHRhZ3MgIlN5bmNocm9ub3VzIgogICAgICAgICAgICB9CiAgICAgICAgICAgIGh0dHBzID0gLS1zeW5jLT4gewogICAgICAgICAgICAgICAgdGVjaG5vbG9neSAiSFRUUFMiCiAgICAgICAgICAgIH0KICAgICAgICAgICAgZ1JQQyA9IC0tc3luYy0+IHsKICAgICAgICAgICAgICAgIHRlY2hub2xvZ3kgImdSUEMiCiAgICAgICAgICAgIH0KICAgICAgICAgICAgd2Vic29ja2V0ID0gLS1zeW5jLT4gewogICAgICAgICAgICAgICAgdGVjaG5vbG9neSAiV2Vic29ja2V0IgogICAgICAgICAgICB9CiAgICAgICAgICAgIGFzeW5jID0gLT4gewogICAgICAgICAgICAgICAgdGFncyAiQXN5bmNocm9ub3VzIgogICAgICAgICAgICB9CiAgICAgICAgICAgIG1xID0gLS1hc3luYy0+IHsKICAgICAgICAgICAgICAgIHRlY2hub2xvZ3kgIkthZmthL1JlZGlzIFN0cmVhbXMiCiAgICAgICAgICAgIH0KICAgICAgICAgICAgc3RyZWFtID0gLS1hc3luYy0+IHsKICAgICAgICAgICAgICAgIHRlY2hub2xvZ3kgIkthZmthIFN0cmVhbXMiCiAgICAgICAgICAgIH0KICAgICAgICB9CgogICAgICAgIGN1c3RvbWVyID0gcGVyc29uICJBbmFseXRpY3MgVXNlciIgIkEgcGVyc29uIHdobyBhY2Nlc3NlcyB0aGUgVEFQIiAiQ3VzdG9tZXIiCgogICAgICAgIG1hcmtldERhdGFTb3VyY2UgPSBzb2Z0d2FyZXN5c3RlbSAiTWFya2V0IERhdGEgU291cmNlIiAiQW4gZXh0ZXJuYWwgc3lzdGVtIHRoYXQgc3VwcGxpZXMgcmVhbC10aW1lIGFuZCBoaXN0b3JpY2FsIG1hcmtldCBkYXRhLiIgIkV4dGVybmFsIFN5c3RlbSIKCiAgICAgICAgZ3JvdXAgIkltYW5haSBUQVAiIHsKICAgICAgICAgICAgZGF0YU1hbmFnZXIgPSBwZXJzb24gIkRhdGEgTWFuYWdlciIgIkEgcGVyc29uIHdobyBtYW5hZ2UgYWN0dWFsIGRhdGEgaW5mbyAodXBkYXRlcyBpbnN0cnVtZW50cyBtZXRhIGV0YykiICJTdGFmZiIKCiAgICAgICAgICAgIG1ldGFEYXRhU3lzdGVtID0gc29mdHdhcmVzeXN0ZW0gIk1ldGEgRGF0YSBTeXN0ZW0iICIiIHsKICAgICAgICAgICAgICAgICFhZHJzIG1ldGEtZGF0YS1zeXN0ZW0vYWRyCiAgICAgICAgICAgICAgICAhZG9jcyBtZXRhLWRhdGEtc3lzdGVtL2RvY3MKCiAgICAgICAgICAgICAgICBpbnN0cnVtZW50UmVnaXN0cnkgPSBjb250YWluZXIgIkluc3RydW1lbnQgUmVnaXN0cnkiICJQcm92aWRlIGluc3RydW1lbnQgbWV0YSBkYXRhIiAiU3ByaW5nIEJvb3QgQXBwIiAiUHVibGljIFNlcnZpY2UiCiAgICAgICAgICAgICAgICBpbnN0cnVtZW50UmVnaXN0cnlEQiA9IGNvbnRhaW5lciAiSW5zdHJ1bWVudCBSZWdpc3RyeSBEQiIgIiIgIlBvc3RncmVTUUwiICJEYXRhYmFzZSwgSW50ZXJuYWwgU2VydmljZSIKICAgICAgICAgICAgICAgIGluc3RydW1lbnRSZWdpc3RyeUNhY2hlID0gY29udGFpbmVyICJJbnN0cnVtZW50IFJlZ2lzdHJ5IENhY2hlIiAiIiAiUmVkaXMiICJDYWNoZSwgSW50ZXJuYWwgU2VydmljZSIKICAgICAgICAgICAgICAgIGluc3RydW1lbnRSZWdpc3RyeVVwZGF0ZXIgPSBjb250YWluZXIgIkluc3RydW1lbnQgUmVnaXN0cnkgVXBkYXRlciIgIlVwZGF0ZXMgZGF0YSBhdXRvbWF0aWNhbGx5IiAiU3ByaW5nIEJvb3QgQXBwIiAiSW50ZXJuYWwgU2VydmljZSIgICAgICAgICAgICAgICAgCiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIG1hcmtldERhdGFTeXN0ZW0gPSBzb2Z0d2FyZXN5c3RlbSAgIk1hcmtldCBEYXRhIFN5c3RlbSIgIlByb3ZpZGUgbWFya2V0IGRhdGEgc3RyZWFtcyAobGl2ZSwgcmVwbGF5LCB0cmFuc2Zvcm1lZCwgY29tYmluZWQpIiB7CiAgICAgICAgICAgICAgICAhYWRycyBtYXJrZXQtZGF0YS1zeXN0ZW0vYWRyCiAgICAgICAgICAgICAgICAhZG9jcyBtYXJrZXQtZGF0YS1zeXN0ZW0vZG9jcwoKICAgICAgICAgICAgICAgIGdyb3VwICJMaXZlIERhdGEgZmxvdyIgewogICAgICAgICAgICAgICAgICAgIGZlZWRBZGFwdG9yID0gY29udGFpbmVyICJGZWVkIEFkYXB0b3IiICJQcm92aWRlci1zcGVjaWZpYyBhZGFwdG9yIChvcGVyYXRlcyB3aXRoIG1lc3NhZ2VzKSIgIlNwcmluZyBCb290IEFwcCIgIkludGVybmFsIFNlcnZpY2UiCiAgICAgICAgICAgICAgICAgICAgZmVlZEluZ2VzdG9yID0gY29udGFpbmVyICJGZWVkIEluZ2VzdG9yIiAiT3BlcmF0ZXMgd2l0aCBwcm92aWRlciBhZ25vc3RpYyBtZXNzYWdlcyBhbmQgY29tYmluZXMgaXQgaW50byBzdHJlYW1zIChkYXRhIHF1YWxpdHkgZ2F0ZSkiICJTcHJpbmcgQm9vdCBBcHAiICJJbnRlcm5hbCBTZXJ2aWNlIgogICAgICAgICAgICAgICAgfQoKICAgICAgICAgICAgICAgIGdyb3VwICJIaXN0b3JpY2FsIERhdGEgRmxvdyIgewogICAgICAgICAgICAgICAgICAgIGhpc3RvcmljYWxEYXRhTG9hZGVyID0gY29udGFpbmVyICJIaXN0b3JpY2FsIERhdGEgTG9hZGVyIiAiUHJvdmlkZXItc3BlY2lmaWMgbG9hZGVyL2FkYXB0b3IiICJTcHJpbmcgQm9vdCBBcHAiICJJbnRlcm5hbCBTZXJ2aWNlIgogICAgICAgICAgICAgICAgICAgIGhpc3RvcmljYWxEYXRhU2VydmljZSA9IGNvbnRhaW5lciAiSGlzdG9yaWNhbCBEYXRhIFNlcnZpY2UiICJPcGVyYXRlIHdpdGggY29sbGVjdGVkIGltbXV0YWJsZSBtYXJrZXQgZGF0YSIgIlNwcmluZyBCb290IEFwcCIgIkludGVybmFsIFNlcnZpY2UiCiAgICAgICAgICAgICAgICAgICAgaGlzdG9yaWNhbERhdGFTdG9yZSA9IGNvbnRhaW5lciAiSGlzdG9yaWNhbCBEYXRhIFN0b3JlIiAiSW1tdXRhYmxlIGZpbmFsaXplZCBkYXRhIiAiUzMgLyBQYXJxdWV0IC8gQ2xpY2tIb3VzZSIgIkRhdGFiYXNlLEludGVybmFsIFNlcnZpY2UiCiAgICAgICAgICAgICAgICB9CgogICAgICAgICAgICAgICAgc3RyZWFtQ29uZmlndXJ0YWlvblN0b3JlID0gY29udGFpbmVyICJTdHJlYW0gQ29uZmlndXJhdGlvbiBTdG9yZSIgIlVzZXItc3BlY2lmaWMgc3RyZWFtIGNvbmZpZ3VyYXRpb24gc3RvcmUiICIiICJEYXRhYmFzZSxJbnRlcm5hbCBTZXJ2aWNlIiAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgIHVuaWZpZWRTdHJlYW1Qcm92aWRlciA9IGNvbnRhaW5lciAiVW5pZmllZCBTdHJlYW0gUHJvdmlkZXIiICJDb21iaW5lcyBsaXZlL2hpc3RvcmljYWwgZGF0YSB0byBsaXZlL3JlcGxheSBzdHJlYW1zIiAiU3ByaW5nIEJvb3QgQXBwIiAiUHVibGljIFNlcnZpY2UiCiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIHZpc3VhbGl6YXRpb25TeXN0ZW0gPSBzb2Z0d2FyZXN5c3RlbSAiVmlzdWFsaXphdGlvbiIgewoKICAgICAgICAgICAgfQoKICAgICAgICAgICAgYWRtaW5pc3RyYXRpb25TeXN0ZW0gPSBzb2Z0d2FyZXN5c3RlbSAiQWRtaW5pc3RyYXRpb24gU3lzdGVtIiAiU3lzdGVtIGFkbWluaXN0YXJ0aW9uICh1c2VycywgaW5zdHJ1bWVudHMsIC4uLikiIHsKCiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIHVzZXJEYXRhU3lzdGVtID0gc29mdHdhcmVzeXN0ZW0gIlVzZXIgRGF0YSBTeXN0ZW0iIHsKCiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIHN0cmF0ZWd5RW5naW5lID0gc29mdHdhcmVzeXN0ZW0gIlN0cmF0ZWd5IEVuZ2luZSIgewoKICAgICAgICAgICAgfSAgIAogICAgICAgIH0KCiAgICAgICAgLyoKICAgICAgICAgICAg0JDQu9GM0YLQtdGA0L3QsNGC0LjQstGLOgogICAgICAgICAgICDQldGB0LvQuCDQvdGD0LbQtdC9INGC0LXRhdC90LjRh9C10YHQutC40Lkg0YHRgtC40LvRjDog4oCcUmVhZHMvV3JpdGVz4oCdLCDigJxQdWJsaXNoZXMvQ29uc3VtZXPigJ0sIOKAnEZldGNoZXPigJ0sIOKAnFBlcnNpc3Rz4oCdLgogICAgICAgICAgICDQldGB0LvQuCDQstCw0LbQvdC+INC90LDQv9GA0LDQstC70LXQvdC40LU6IOKAnFByb3ZpZGVz4oCdLCDigJxSZXF1ZXN0c+KAnSwg4oCcU3VwcGxpZXPigJ0uCiAgICAgICAgICAgINCV0YHQu9C4INGN0YLQviDQvNC10LbRgdC10YDQstC40YHQvdCw0Y8gQVBJLdC60L7QvNC80YPQvdC40LrQsNGG0LjRjzog4oCcQ2FsbHPigJ0sIOKAnEludm9rZXPigJ0sIOKAnFN1YnNjcmliZXMgdG/igJ0uCgogICAgICAgICAgICDQoNC10LrQvtC80LXQvdC00LDRhtC40Lg6CiAgICAgICAgICAgINCe0L/RgNC10LTQtdC70Lgg0LXQtNC40L3Ri9C5INCz0LvQsNCz0L7Qu9GM0L3Ri9C5INGB0LvQvtCy0LDRgNGMOiDQvdCw0L/RgNC40LzQtdGALCDQtNC70Y8g0YXRgNCw0L3QuNC70LjRidCwINCy0YHQtdCz0LTQsCDigJxTdG9yZXPigJ0gLyDigJxSZWFkc+KAnSwg0LTQu9GPIEFQSSDigJQg4oCcQ2FsbHPigJ0sINC00LvRjyDQv9C+0YLQvtC60L7QsiDigJQg4oCcUHVibGlzaGVzL0NvbnN1bWVz4oCdLgogICAgICAgICAgICDQn9GA0L7QstC10YDRj9C5INGB0LLRj9C30Yw6INCz0LvQsNCz0L7QuyDQtNC+0LvQttC10L0g0L7RgtGA0LDQttCw0YLRjCDRhNCw0LrRgiDQstC30LDQuNC80L7QtNC10LnRgdGC0LLQuNGPLCDQsCDQvdC1INCx0LjQt9C90LXRgS3Qu9C+0LPQuNC60YMuCiAgICAgICAgICAgINCh0LzQvtGC0YDQuCDQvdCwINGB0LjQvNC80LXRgtGA0LjRjjog0LXRgdC70Lgg0L7QtNC40L0g0LrQvtC80L/QvtC90LXQvdGCIOKAnFNlbmRz4oCdLCDQtNGA0YPQs9C+0Lkg0LTQvtC70LbQtdC9IOKAnFJlY2VpdmVzL0NvbnN1bWVz4oCdLiAgICAgICAgCiAgICAgICAgKi8KCiAgICAgICAgLy8gUGxhdGZvcm0KICAgICAgICBjdXN0b21lciAtPiB2aXN1YWxpemF0aW9uU3lzdGVtICJXb3JrcyB3aXRoIgogICAgICAgIGRhdGFNYW5hZ2VyIC0+IGFkbWluaXN0cmF0aW9uU3lzdGVtICJXb3JrcyB3aXRoIgoKICAgICAgICBhZG1pbmlzdHJhdGlvblN5c3RlbSAtPiBpbnN0cnVtZW50UmVnaXN0cnkgIk1hbnVhbCBVcGRhdGVzIgogICAgICAgIHZpc3VhbGl6YXRpb25TeXN0ZW0gLT4gdW5pZmllZFN0cmVhbVByb3ZpZGVyICJVc2VzIgogICAgICAgIHZpc3VhbGl6YXRpb25TeXN0ZW0gLT4gaW5zdHJ1bWVudFJlZ2lzdHJ5ICJVc2VzIgogICAgICAgIHZpc3VhbGl6YXRpb25TeXN0ZW0gLT4gc3RyYXRlZ3lFbmdpbmUgIlVzZXMiCiAgICAgICAgc3RyYXRlZ3lFbmdpbmUgLT4gaW5zdHJ1bWVudFJlZ2lzdHJ5ICJVc2VzIgogICAgICAgIHN0cmF0ZWd5RW5naW5lIC0+IHVuaWZpZWRTdHJlYW1Qcm92aWRlciAiVXNlcyIKICAgICAgICBtYXJrZXREYXRhU3lzdGVtIC0+IGluc3RydW1lbnRSZWdpc3RyeSAiVXNlcyIKICAgICAgICBtYXJrZXREYXRhU3lzdGVtIC0+IG1hcmtldERhdGFTb3VyY2UgIlVzZXMiCiAgICAgICAgc3RyYXRlZ3lFbmdpbmUgLT4gdXNlckRhdGFTeXN0ZW0gIlVzZXMiCiAgICAgICAgdmlzdWFsaXphdGlvblN5c3RlbSAtPiB1c2VyRGF0YVN5c3RlbSAiVXNlcyIKCiAgICAgICAgZmVlZEFkYXB0b3IgLS13ZWJzb2NrZXQtPiBtYXJrZXREYXRhU291cmNlICJIYW5kbGVzIGZlZWQiICAgIAogICAgICAgIGhpc3RvcmljYWxEYXRhTG9hZGVyIC0+IG1hcmtldERhdGFTb3VyY2UgIlJlcXVlc3RzIGhpc3RvcmljYWwgZGF0YSBmb3IgaW5zdHJ1bWVudHMiCgogICAgICAgIGZlZWRBZGFwdG9yIC0tZ1JQQy0+IGluc3RydW1lbnRSZWdpc3RyeSAiVXNlcyIKICAgICAgICBoaXN0b3JpY2FsRGF0YUxvYWRlciAtLWdSUEMtPiBpbnN0cnVtZW50UmVnaXN0cnkgIlVzZXMiCgogICAgICAgIHVuaWZpZWRTdHJlYW1Qcm92aWRlciAtPiBzdHJlYW1Db25maWd1cnRhaW9uU3RvcmUgIlVzZXMiCiAgICAgICAgZmVlZEFkYXB0b3IgLS1tcS0+IGZlZWRJbmdlc3RvciAiU2VuZHMgdW5pZmllZCBkYXRhIgogICAgICAgIHVuaWZpZWRTdHJlYW1Qcm92aWRlciAtLXN0cmVhbS0+IGZlZWRJbmdlc3RvciAiQ29uc3VtZXMgZGF0YSBzdHJlYW1zIGFuZCBidWlsZHMgdGhlIGxhc3QgYmFyIGZvciBlYWNoIG9wZW4gcGVyaW9kIiAgICAKCiAgICAgICAgaGlzdG9yaWNhbERhdGFTZXJ2aWNlIC0tZ1JQQy0+IGhpc3RvcmljYWxEYXRhTG9hZGVyICJQdWxscyB1bmlmaWVkIGhpc3RvcmljYWwgZGF0YSIKICAgICAgICBoaXN0b3JpY2FsRGF0YVNlcnZpY2UgLT4gaGlzdG9yaWNhbERhdGFTdG9yZSAiU3RvcmVzIGRhdGEiCiAgICAgICAgdW5pZmllZFN0cmVhbVByb3ZpZGVyIC0+IGhpc3RvcmljYWxEYXRhU2VydmljZSAiVXNlcyBjb2xsZWN0ZWQgaGlzdG9yaWNhbCBkYXRhIgoKICAgICAgICBpbnN0cnVtZW50UmVnaXN0cnkgLT4gaW5zdHJ1bWVudFJlZ2lzdHJ5REIgIlN0b3JlcyBkYXRhIgogICAgICAgIGluc3RydW1lbnRSZWdpc3RyeSAtPiBpbnN0cnVtZW50UmVnaXN0cnlDYWNoZSAiQ2FjaGVzIGRhdGEiCiAgICAgICAgaW5zdHJ1bWVudFJlZ2lzdHJ5VXBkYXRlciAtPiBtYXJrZXREYXRhU291cmNlICJTY3JhcGVzIGRhdGEiCiAgICAgICAgaW5zdHJ1bWVudFJlZ2lzdHJ5VXBkYXRlciAtPiBpbnN0cnVtZW50UmVnaXN0cnkgIlVwZGF0ZXMgYXV0b21hdGljYWxseSIKICAgIH0KCiAgICB2aWV3cyB7CiAgICAgICAgcHJvcGVydGllcyB7CiAgICAgICAgICAgICJjNHBsYW50dW1sLmVsZW1lbnRQcm9wZXJ0aWVzIiAidHJ1ZSIKICAgICAgICAgICAgImM0cGxhbnR1bWwudGFncyIgInRydWUiCiAgICAgICAgICAgICJnZW5lcmF0ci5zdHlsZS5jb2xvcnMucHJpbWFyeSIgIiM0ODVmYzciCiAgICAgICAgICAgICJnZW5lcmF0ci5zdHlsZS5jb2xvcnMuc2Vjb25kYXJ5IiAiI2ZmZmZmZiIKICAgICAgICAgICAgImdlbmVyYXRyLnN0eWxlLmZhdmljb25QYXRoIiAic2l0ZS9mYXZpY29uLmljbyIKICAgICAgICAgICAgImdlbmVyYXRyLnN0eWxlLmxvZ29QYXRoIiAic2l0ZS9sb2dvLnBuZyIKCiAgICAgICAgICAgIC8vIEFic29sdXRlIFVSTCdzIGxpa2UgImh0dHBzOi8vZXhhbXBsZS5jb20vY3VzdG9tLmNzcyIgYXJlIGFsc28gc3VwcG9ydGVkCiAgICAgICAgICAgICJnZW5lcmF0ci5zdHlsZS5jdXN0b21TdHlsZXNoZWV0IiAic2l0ZS9jdXN0b20uY3NzIgoKICAgICAgICAgICAgImdlbmVyYXRyLnN2Z2xpbmsudGFyZ2V0IiAiX3NlbGYiCgogICAgICAgICAgICAvLyBGdWxsIGxpc3Qgb2YgYXZhaWxhYmxlICJnZW5lcmF0ci5tYXJrZG93bi5mbGV4bWFyay5leHRlbnNpb25zIgogICAgICAgICAgICAvLyAiQWJicmV2aWF0aW9uLEFkbW9uaXRpb24sQW5jaG9yTGluayxBc2lkZSxBdHRyaWJ1dGVzLEF1dG9saW5rLERlZmluaXRpb24sRW1vamksRW51bWVyYXRlZFJlZmVyZW5jZSxGb290bm90ZXMsR2ZtSXNzdWVzLEdmbVN0cmlrZXRocm91Z2hTdWJzY3JpcHQsR2ZtVGFza0xpc3QsR2ZtVXNlcnMsR2l0TGFiLElucyxNYWNyb3MsTWVkaWFUYWdzLFJlc2l6YWJsZUltYWdlLFN1cGVyc2NyaXB0LFRhYmxlcyxUYWJsZU9mQ29udGVudHMsU2ltdWxhdGVkVGFibGVPZkNvbnRlbnRzLFR5cG9ncmFwaGljLFdpa2lMaW5rcyxYV2lraU1hY3JvLFlBTUxGcm9udE1hdHRlcixZb3VUdWJlTGluayIKICAgICAgICAgICAgLy8gc2VlIGh0dHBzOi8vZ2l0aHViLmNvbS92c2NoL2ZsZXhtYXJrLWphdmEvd2lraS9FeHRlbnNpb25zCiAgICAgICAgICAgIC8vIEFUVEVOVElPTjoKICAgICAgICAgICAgLy8gKiAiZ2VuZXJhdHIubWFya2Rvd24uZmxleG1hcmsuZXh0ZW5zaW9ucyIgdmFsdWVzIG11c3QgYmUgc2VwYXJhdGVkIGJ5IGNvbW1hCiAgICAgICAgICAgIC8vICogaXQncyBub3QgcG9zc2libGUgdG8gdXNlICJHaXRMYWIiIGFuZCAiUmVzaXphYmxlSW1hZ2UiIGV4dGVuc2lvbnMgdG9nZXRoZXIKICAgICAgICAgICAgLy8gZGVmYXVsdCBiZWhhdmlvdXIsIGlmIG5vIGdlbmVyYXRyLm1hcmtkb3duLmZsZXhtYXJrLmV4dGVuc2lvbnMgcHJvcGVydHkgaXMgc3BlY2lmaWVkLCBpcyB0byBsb2FkIHRoZSBUYWJsZXMgZXh0ZW5zaW9uIG9ubHkKICAgICAgICAgICAgImdlbmVyYXRyLm1hcmtkb3duLmZsZXhtYXJrLmV4dGVuc2lvbnMiICJBYmJyZXZpYXRpb24sQWRtb25pdGlvbixBbmNob3JMaW5rLEF0dHJpYnV0ZXMsQXV0b2xpbmssRGVmaW5pdGlvbixFbW9qaSxGb290bm90ZXMsR2ZtVGFza0xpc3QsR2l0TGFiLE1lZGlhVGFncyxUYWJsZXMsVGFibGVPZkNvbnRlbnRzLFR5cG9ncmFwaGljIgoKICAgICAgICAgICAgImdlbmVyYXRyLnNpdGUuZXhwb3J0ZXIiICJzdHJ1Y3R1cml6ciIKICAgICAgICAgICAgImdlbmVyYXRyLnNpdGUuZXh0ZXJuYWxUYWciICJFeHRlcm5hbCBTeXN0ZW0iCiAgICAgICAgICAgICJnZW5lcmF0ci5zaXRlLm5lc3RHcm91cHMiICJmYWxzZSIKICAgICAgICAgICAgImdlbmVyYXRyLnNpdGUuY2RuIiAiaHR0cHM6Ly9jZG4uanNkZWxpdnIubmV0L25wbSIKICAgICAgICAgICAgImdlbmVyYXRyLnNpdGUudGhlbWUiICJhdXRvIgogICAgICAgIH0KCiAgICAgICAgc3lzdGVtbGFuZHNjYXBlICJTeXN0ZW1MYW5kc2NhcGUiIHsKICAgICAgICAgICAgaW5jbHVkZSAqCiAgICAgICAgICAgIGF1dG9MYXlvdXQKICAgICAgICB9CgogICAgICAgIHN5c3RlbWNvbnRleHQgbWFya2V0RGF0YVN5c3RlbSAiU3lzdGVtQ29udGV4dCIgewogICAgICAgICAgICBpbmNsdWRlICoKICAgICAgICAgICAgYXV0b0xheW91dAogICAgICAgICAgICB0aXRsZSAiU3lzdGVtIENvbnRleHQgb2YgTWFya2V0IERhdGEgU3lzdGVtIgogICAgICAgICAgICBkZXNjcmlwdGlvbiAiRGVzY3JpYmVzIHRoZSBvdmVyYWxsIGNvbnRleHQiCiAgICAgICAgfQoKICAgICAgICBjb250YWluZXIgbWFya2V0RGF0YVN5c3RlbSAiTWFya2V0RFNDb250YWluZXJzIiB7CiAgICAgICAgICAgIGluY2x1ZGUgKgogICAgICAgIH0KCiAgICAgICAgY29udGFpbmVyIG1ldGFEYXRhU3lzdGVtICJNZXRhRFNDb250YWluZXJzIiB7CiAgICAgICAgICAgIGluY2x1ZGUgKgogICAgICAgIH0KCiAgICAgICAgc3R5bGVzIHsKICAgICAgICAgICAgZWxlbWVudCAiUGVyc29uIiB7CiAgICAgICAgICAgICAgICBjb2xvciAjZmZmZmZmCiAgICAgICAgICAgICAgICBmb250U2l6ZSAyMgogICAgICAgICAgICAgICAgc2hhcGUgUGVyc29uCiAgICAgICAgICAgIH0KICAgICAgICAgICAgZWxlbWVudCAiQ3VzdG9tZXIiIHsKICAgICAgICAgICAgICAgIGJhY2tncm91bmQgIzY4Njg2OAogICAgICAgICAgICB9CiAgICAgICAgICAgIGVsZW1lbnQgIlN0YWZmIiB7CiAgICAgICAgICAgICAgICBiYWNrZ3JvdW5kICMwODQyN0IKICAgICAgICAgICAgfQogICAgICAgICAgICBlbGVtZW50ICJTb2Z0d2FyZSBTeXN0ZW0iIHsKICAgICAgICAgICAgICAgIGJhY2tncm91bmQgIzk2YmRlNCAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgIGNvbG9yICNmZmZmZmYKICAgICAgICAgICAgfQogICAgICAgICAgICBlbGVtZW50ICJJbnRlcm5hbCBTZXJ2aWNlIiB7CiAgICAgICAgICAgICAgICBiYWNrZ3JvdW5kICMxMTY4YmQKICAgICAgICAgICAgICAgIG9wYWNpdHkgNzUKICAgICAgICAgICAgICAgIGNvbG9yICNmZmZmZmYKICAgICAgICAgICAgfSAgICAgICAgICAgIAogICAgICAgICAgICBlbGVtZW50ICJFeHRlcm5hbCBTeXN0ZW0iIHsKICAgICAgICAgICAgICAgIGJhY2tncm91bmQgIzY4Njg2OAogICAgICAgICAgICB9CiAgICAgICAgICAgIGVsZW1lbnQgIkV4aXN0aW5nIFN5c3RlbSIgewogICAgICAgICAgICAgICAgYmFja2dyb3VuZCAjOTk5OTk5CiAgICAgICAgICAgICAgICBjb2xvciAjZmZmZmZmCiAgICAgICAgICAgIH0KICAgICAgICAgICAgZWxlbWVudCAiQ29udGFpbmVyIiB7CiAgICAgICAgICAgICAgICBiYWNrZ3JvdW5kICMxMTY4YmQKICAgICAgICAgICAgICAgIGNvbG9yICNmZmZmZmYKICAgICAgICAgICAgfQogICAgICAgICAgICBlbGVtZW50ICJXZWIgQnJvd3NlciIgewogICAgICAgICAgICAgICAgc2hhcGUgV2ViQnJvd3NlcgogICAgICAgICAgICB9CiAgICAgICAgICAgIGVsZW1lbnQgIk1vYmlsZSBBcHAiIHsKICAgICAgICAgICAgICAgIHNoYXBlIE1vYmlsZURldmljZUxhbmRzY2FwZQogICAgICAgICAgICB9CiAgICAgICAgICAgIGVsZW1lbnQgIkRhdGFiYXNlIiB7CiAgICAgICAgICAgICAgICBzaGFwZSBDeWxpbmRlcgogICAgICAgICAgICB9CiAgICAgICAgICAgIGVsZW1lbnQgIkNvbXBvbmVudCIgewogICAgICAgICAgICAgICAgYmFja2dyb3VuZCAjMTE2OGJkCiAgICAgICAgICAgICAgICBjb2xvciAjMDAwMDAwCiAgICAgICAgICAgIH0KICAgICAgICAgICAgZWxlbWVudCAiRmFpbG92ZXIiIHsKICAgICAgICAgICAgICAgIG9wYWNpdHkgMjUKICAgICAgICAgICAgfQogICAgICAgICAgICByZWxhdGlvbnNoaXAgIlJlbGF0aW9uc2hpcCIgewogICAgICAgICAgICAgICAgZGFzaGVkIGZhbHNlCiAgICAgICAgICAgIH0KICAgICAgICAgICAgcmVsYXRpb25zaGlwICJBc3luY2hyb25vdXMiIHsKICAgICAgICAgICAgICAgIGRhc2hlZCB0cnVlCiAgICAgICAgICAgIH0KICAgICAgICB9CiAgICB9Cn0="
   },
   "views" : {
     "configuration" : {
       "branding" : { },
-      "lastSavedView" : "MDSContainers",
+      "lastSavedView" : "SystemLandscape",
       "metadataSymbols" : "SquareBrackets",
       "properties" : {
         "generatr.style.logoPath" : "site/logo.png",
@@ -476,92 +600,220 @@
     },
     "containerViews" : [ {
       "dimensions" : {
-        "height" : 2393,
-        "width" : 3146
+        "height" : 2495,
+        "width" : 3359
       },
       "elements" : [ {
         "id" : "2",
-        "x" : 1019,
-        "y" : 1858
+        "x" : 1113,
+        "y" : 1780
       }, {
-        "id" : "8",
-        "x" : 180,
-        "y" : 1325
-      }, {
-        "id" : "9",
-        "x" : 184,
-        "y" : 798
+        "id" : "4",
+        "x" : 298,
+        "y" : 1780
       }, {
         "id" : "10",
-        "x" : 1835,
-        "y" : 1325
+        "x" : 304,
+        "y" : 1243
       }, {
         "id" : "11",
-        "x" : 1829,
-        "y" : 798
+        "x" : 304,
+        "y" : 650
       }, {
         "id" : "12",
-        "x" : 2535,
-        "y" : 798
+        "x" : 1828,
+        "y" : 1243
       }, {
         "id" : "13",
-        "x" : 1019,
-        "y" : 798
+        "x" : 1828,
+        "y" : 645
       }, {
         "id" : "14",
-        "x" : 184,
-        "y" : 308
+        "x" : 2548,
+        "y" : 645
+      }, {
+        "id" : "15",
+        "x" : 1095,
+        "y" : 1243
       }, {
         "id" : "16",
-        "x" : 1019,
-        "y" : 308
+        "x" : 1095,
+        "y" : 643
       }, {
         "id" : "17",
-        "x" : 1829,
-        "y" : 308
+        "x" : 1103,
+        "y" : 165
+      }, {
+        "id" : "20",
+        "x" : 308,
+        "y" : 165
       } ],
       "externalSoftwareSystemBoundariesVisible" : false,
-      "key" : "MDSContainers",
+      "key" : "MarketDSContainers",
       "order" : 3,
       "relationships" : [ {
-        "id" : "22"
+        "id" : "25"
       }, {
-        "id" : "26",
+        "id" : "28",
         "vertices" : [ {
-          "x" : 928,
-          "y" : 193
+          "x" : 2938,
+          "y" : 325
         }, {
-          "x" : 1613,
-          "y" : 198
+          "x" : 3113,
+          "y" : 410
+        }, {
+          "x" : 3123,
+          "y" : 2125
+        }, {
+          "x" : 3013,
+          "y" : 2220
+        }, {
+          "x" : 703,
+          "y" : 2235
         } ]
       }, {
         "id" : "29"
       }, {
-        "id" : "33"
+        "id" : "31",
+        "vertices" : [ {
+          "x" : 229,
+          "y" : 425
+        }, {
+          "x" : 224,
+          "y" : 1730
+        } ]
       }, {
-        "id" : "34"
-      }, {
-        "id" : "36"
-      }, {
-        "id" : "37"
+        "id" : "32"
       }, {
         "id" : "39"
       }, {
         "id" : "40"
       }, {
-        "id" : "41"
-      }, {
         "id" : "42"
       }, {
-        "id" : "43"
+        "id" : "44",
+        "vertices" : [ {
+          "x" : 2043,
+          "y" : 2045
+        }, {
+          "x" : 1943,
+          "y" : 2165
+        }, {
+          "x" : 708,
+          "y" : 2170
+        } ]
       }, {
-        "id" : "44"
+        "id" : "45"
+      }, {
+        "id" : "46"
+      }, {
+        "id" : "47"
+      }, {
+        "id" : "48"
+      }, {
+        "id" : "49"
+      }, {
+        "id" : "50"
+      }, {
+        "id" : "54"
       } ],
-      "softwareSystemId" : "7"
+      "softwareSystemId" : "9"
+    }, {
+      "dimensions" : {
+        "height" : 2680,
+        "width" : 2459
+      },
+      "elements" : [ {
+        "id" : "2",
+        "x" : 342,
+        "y" : 2145
+      }, {
+        "id" : "5",
+        "x" : 1054,
+        "y" : 1125
+      }, {
+        "id" : "6",
+        "x" : 342,
+        "y" : 1125
+      }, {
+        "id" : "7",
+        "x" : 1053,
+        "y" : 1605
+      }, {
+        "id" : "8",
+        "x" : 342,
+        "y" : 1585
+      }, {
+        "id" : "9",
+        "x" : 338,
+        "y" : 645
+      }, {
+        "id" : "17",
+        "x" : 1068,
+        "y" : 165
+      }, {
+        "id" : "18",
+        "x" : 1808,
+        "y" : 645
+      }, {
+        "id" : "20",
+        "x" : 1070,
+        "y" : 645
+      } ],
+      "externalSoftwareSystemBoundariesVisible" : false,
+      "key" : "MetaDSContainers",
+      "order" : 4,
+      "relationships" : [ {
+        "id" : "23",
+        "vertices" : [ {
+          "x" : 2033,
+          "y" : 1060
+        }, {
+          "x" : 1678,
+          "y" : 1270
+        } ]
+      }, {
+        "id" : "26"
+      }, {
+        "id" : "27",
+        "vertices" : [ {
+          "x" : 1643,
+          "y" : 550
+        }, {
+          "x" : 1648,
+          "y" : 1020
+        } ]
+      }, {
+        "id" : "29"
+      }, {
+        "id" : "30"
+      }, {
+        "id" : "33"
+      }, {
+        "id" : "34"
+      }, {
+        "id" : "36",
+        "vertices" : [ {
+          "x" : 228,
+          "y" : 1020
+        }, {
+          "x" : 224,
+          "y" : 2070
+        } ]
+      }, {
+        "id" : "51"
+      }, {
+        "id" : "52"
+      }, {
+        "id" : "53"
+      }, {
+        "id" : "55"
+      } ],
+      "softwareSystemId" : "4"
     } ],
     "systemContextViews" : [ {
       "automaticLayout" : {
-        "applied" : false,
+        "applied" : true,
         "edgeSeparation" : 0,
         "implementation" : "Graphviz",
         "nodeSeparation" : 300,
@@ -570,46 +822,56 @@
         "vertices" : false
       },
       "description" : "Describes the overall context",
+      "dimensions" : {
+        "height" : 3120,
+        "width" : 1465
+      },
       "elements" : [ {
         "id" : "2",
-        "x" : 0,
-        "y" : 0
+        "x" : 557,
+        "y" : 2572
       }, {
         "id" : "4",
-        "x" : 0,
-        "y" : 0
+        "x" : 219,
+        "y" : 1972
       }, {
-        "id" : "7",
-        "x" : 0,
-        "y" : 0
-      }, {
-        "id" : "14",
-        "x" : 0,
-        "y" : 0
-      }, {
-        "id" : "16",
-        "x" : 0,
-        "y" : 0
+        "id" : "9",
+        "x" : 794,
+        "y" : 1372
       }, {
         "id" : "17",
-        "x" : 0,
-        "y" : 0
+        "x" : 486,
+        "y" : 172
+      }, {
+        "id" : "20",
+        "x" : 486,
+        "y" : 772
       } ],
       "enterpriseBoundaryVisible" : true,
       "key" : "SystemContext",
       "order" : 2,
       "relationships" : [ {
-        "id" : "23"
+        "id" : "26",
+        "vertices" : [ {
+          "x" : 1086,
+          "y" : 772
+        }, {
+          "x" : 1086,
+          "y" : 1072
+        } ]
       }, {
-        "id" : "25"
+        "id" : "28",
+        "vertices" : [ {
+          "x" : 336,
+          "y" : 772
+        }, {
+          "x" : 336,
+          "y" : 1072
+        } ]
       }, {
-        "id" : "26"
+        "id" : "29"
       }, {
-        "id" : "28"
-      }, {
-        "id" : "30"
-      }, {
-        "id" : "32"
+        "id" : "31"
       }, {
         "id" : "33"
       }, {
@@ -617,14 +879,14 @@
       }, {
         "id" : "36"
       }, {
-        "id" : "38"
+        "id" : "54"
       } ],
-      "softwareSystemId" : "7",
+      "softwareSystemId" : "9",
       "title" : "System Context of Market Data System"
     } ],
     "systemLandscapeViews" : [ {
       "automaticLayout" : {
-        "applied" : false,
+        "applied" : true,
         "edgeSeparation" : 0,
         "implementation" : "Graphviz",
         "nodeSeparation" : 300,
@@ -632,64 +894,78 @@
         "rankSeparation" : 300,
         "vertices" : false
       },
+      "dimensions" : {
+        "height" : 3900,
+        "width" : 3006
+      },
       "elements" : [ {
         "id" : "1",
-        "x" : 0,
-        "y" : 0
+        "x" : 1565,
+        "y" : 165
       }, {
         "id" : "2",
-        "x" : 0,
-        "y" : 0
+        "x" : 1994,
+        "y" : 3365
       }, {
         "id" : "3",
-        "x" : 0,
-        "y" : 0
+        "x" : 244,
+        "y" : 1465
       }, {
         "id" : "4",
-        "x" : 0,
-        "y" : 0
+        "x" : 1656,
+        "y" : 2765
       }, {
-        "id" : "7",
-        "x" : 0,
-        "y" : 0
-      }, {
-        "id" : "14",
-        "x" : 0,
-        "y" : 0
-      }, {
-        "id" : "15",
-        "x" : 0,
-        "y" : 0
-      }, {
-        "id" : "16",
-        "x" : 0,
-        "y" : 0
+        "id" : "9",
+        "x" : 2335,
+        "y" : 2165
       }, {
         "id" : "17",
-        "x" : 0,
-        "y" : 0
+        "x" : 1540,
+        "y" : 865
+      }, {
+        "id" : "18",
+        "x" : 219,
+        "y" : 2165
+      }, {
+        "id" : "19",
+        "x" : 1277,
+        "y" : 2165
+      }, {
+        "id" : "20",
+        "x" : 1806,
+        "y" : 1515
       } ],
       "enterpriseBoundaryVisible" : true,
       "key" : "SystemLandscape",
       "order" : 1,
       "relationships" : [ {
-        "id" : "18"
-      }, {
-        "id" : "19"
-      }, {
         "id" : "21"
       }, {
-        "id" : "23"
+        "id" : "22"
       }, {
-        "id" : "25"
+        "id" : "24"
       }, {
-        "id" : "26"
+        "id" : "26",
+        "vertices" : [ {
+          "x" : 2406,
+          "y" : 1465
+        } ]
       }, {
-        "id" : "28"
+        "id" : "28",
+        "vertices" : [ {
+          "x" : 1506,
+          "y" : 1465
+        }, {
+          "x" : 1127,
+          "y" : 2165
+        }, {
+          "x" : 1127,
+          "y" : 2465
+        } ]
       }, {
-        "id" : "30"
+        "id" : "29"
       }, {
-        "id" : "32"
+        "id" : "31"
       }, {
         "id" : "33"
       }, {
@@ -697,7 +973,15 @@
       }, {
         "id" : "36"
       }, {
-        "id" : "38"
+        "id" : "37"
+      }, {
+        "id" : "38",
+        "vertices" : [ {
+          "x" : 1656,
+          "y" : 1465
+        } ]
+      }, {
+        "id" : "54"
       } ]
     } ]
   }

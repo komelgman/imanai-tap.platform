@@ -23,29 +23,34 @@ workspace "Imanai TAP" "Trading Analytics Portal" {
             async = -> {
                 tags "Asynchronous"
             }
-            eventBus = --async-> {
+            mq = --async-> {
                 technology "Kafka/Redis Streams"
             }
             stream = --async-> {
-                technology "Kafka Streams etc"
+                technology "Kafka Streams"
             }
         }
 
         customer = person "Analytics User" "A person who accesses the TAP" "Customer"
 
-        marketDataProvider = softwaresystem "Market Data Provider" "An external system that supplies real-time and historical market data." "External System"
+        marketDataSource = softwaresystem "Market Data Source" "An external system that supplies real-time and historical market data." "External System"
 
         group "Imanai TAP" {
             dataManager = person "Data Manager" "A person who manage actual data info (updates instruments meta etc)" "Staff"
 
-            metaDataSystem = softwaresystem "Meta Data System" "Provide meta data (instrument, ...)" {
+            metaDataSystem = softwaresystem "Meta Data System" "" {
+                !adrs meta-data-system/adr
+                !docs meta-data-system/docs
+
                 instrumentRegistry = container "Instrument Registry" "Provide instrument meta data" "Spring Boot App" "Public Service"
-                instrumentRegistryDB = container "Instrument Registry DB" "Stores instrument meta data" "PostgreSQL" "Database"
+                instrumentRegistryDB = container "Instrument Registry DB" "" "PostgreSQL" "Database, Internal Service"
+                instrumentRegistryCache = container "Instrument Registry Cache" "" "Redis" "Cache, Internal Service"
+                instrumentRegistryUpdater = container "Instrument Registry Updater" "Updates data automatically" "Spring Boot App" "Internal Service"                
             }
 
             marketDataSystem = softwaresystem  "Market Data System" "Provide market data streams (live, replay, transformed, combined)" {
-                // !adrs market-data-system/adr
-                // !docs market-data-system/docs
+                !adrs market-data-system/adr
+                !docs market-data-system/docs
 
                 group "Live Data flow" {
                     feedAdaptor = container "Feed Adaptor" "Provider-specific adaptor (operates with messages)" "Spring Boot App" "Internal Service"
@@ -58,10 +63,11 @@ workspace "Imanai TAP" "Trading Analytics Portal" {
                     historicalDataStore = container "Historical Data Store" "Immutable finalized data" "S3 / Parquet / ClickHouse" "Database,Internal Service"
                 }
 
-                streamProvider = container "Unified Stream Provider" "Combines live/historical data to live/replay streams" "Spring Boot App" "Public Service"
+                streamConfigurtaionStore = container "Stream Configuration Store" "User-specific stream configuration store" "" "Database,Internal Service"                
+                unifiedStreamProvider = container "Unified Stream Provider" "Combines live/historical data to live/replay streams" "Spring Boot App" "Public Service"
             }
 
-            visualizationSystem = softwaresystem "Visualization System" {
+            visualizationSystem = softwaresystem "Visualization" {
 
             }
 
@@ -78,33 +84,51 @@ workspace "Imanai TAP" "Trading Analytics Portal" {
             }   
         }
 
-        // Platform
-        customer -> visualizationSystem "Work with"
-        dataManager -> administrationSystem "Work with"
+        /*
+            Альтернативы:
+            Если нужен технический стиль: “Reads/Writes”, “Publishes/Consumes”, “Fetches”, “Persists”.
+            Если важно направление: “Provides”, “Requests”, “Supplies”.
+            Если это межсервисная API-коммуникация: “Calls”, “Invokes”, “Subscribes to”.
 
-        administrationSystem -> instrumentRegistry "Uses/Updates"
-        visualizationSystem -> streamProvider "Uses"
+            Рекомендации:
+            Определи единый глагольный словарь: например, для хранилища всегда “Stores” / “Reads”, для API — “Calls”, для потоков — “Publishes/Consumes”.
+            Проверяй связь: глагол должен отражать факт взаимодействия, а не бизнес-логику.
+            Смотри на симметрию: если один компонент “Sends”, другой должен “Receives/Consumes”.        
+        */
+
+        // Platform
+        customer -> visualizationSystem "Works with"
+        dataManager -> administrationSystem "Works with"
+
+        administrationSystem -> instrumentRegistry "Updates manualally"
+        visualizationSystem -> unifiedStreamProvider "Uses"
         visualizationSystem -> instrumentRegistry "Uses"
         visualizationSystem -> strategyEngine "Uses"
         strategyEngine -> instrumentRegistry "Uses"
-        strategyEngine -> streamProvider "Uses"
+        strategyEngine -> unifiedStreamProvider "Uses"
         marketDataSystem -> instrumentRegistry "Uses"
+        marketDataSystem -> marketDataSource "Uses"
         strategyEngine -> userDataSystem "Uses"
-        streamProvider -> userDataSystem "Uses"
         visualizationSystem -> userDataSystem "Uses"
 
-        feedAdaptor --websocket-> marketDataProvider "Handle feed"
-        historicalDataLoader -> marketDataProvider "Request Historical Data for Instruments"
+        feedAdaptor --websocket-> marketDataSource "Handles feed"    
+        historicalDataLoader -> marketDataSource "Requests historical data for instruments"
 
-        // Market Data System
-        feedAdaptor --eventBus-> feedIngestor "Send unified data"
-        streamProvider --stream-> feedIngestor "Aggregate streams into Last Bar for currently opened periods"
-        
-        historicalDataService --gRPC-> historicalDataLoader "Pull unified historical data"
-        historicalDataService -> historicalDataStore "Store in"
-        streamProvider -> historicalDataService "Uses collected historical data"
+        feedAdaptor --gRPC-> instrumentRegistry "Uses"
+        historicalDataLoader --gRPC-> instrumentRegistry "Uses"
 
-        instrumentRegistry -> instrumentRegistryDB
+        unifiedStreamProvider -> streamConfigurtaionStore "Uses"
+        feedAdaptor --mq-> feedIngestor "Sends unified data"
+        unifiedStreamProvider --stream-> feedIngestor "Consumes data streams and builds the last bar for each open period"    
+
+        historicalDataService --gRPC-> historicalDataLoader "Pulls unified historical data"
+        historicalDataService -> historicalDataStore "Stores data"
+        unifiedStreamProvider -> historicalDataService "Uses collected historical data"
+
+        instrumentRegistry -> instrumentRegistryDB "Stores data"
+        instrumentRegistry -> instrumentRegistryCache "Caches data"
+        instrumentRegistryUpdater -> marketDataSource "Scrapes data"
+        instrumentRegistryUpdater -> instrumentRegistry "Updates automatically"
     }
 
     views {
@@ -149,11 +173,13 @@ workspace "Imanai TAP" "Trading Analytics Portal" {
             description "Describes the overall context"
         }
 
-        container marketDataSystem "MDSContainers" {
+        container marketDataSystem "MarketDSContainers" {
             include *
         }
 
-        # filtered "MDSContainers" exclude "Database"
+        container metaDataSystem "MetaDSContainers" {
+            include *
+        }
 
         styles {
             element "Person" {
