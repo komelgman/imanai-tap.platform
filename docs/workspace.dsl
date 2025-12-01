@@ -29,6 +29,20 @@ workspace "Imanai TAP" "Trading Analytics Portal" {
             stream = --async-> {
                 technology "Kafka Streams"
             }
+
+            publicApi = container {
+                technology "Java/Spring Boot"
+                tag "Public Service"
+            }
+
+            privateApi = container {
+                technology "Java/Spring Boot"
+                tag "Internal Service"
+            }
+
+            datasource = container {
+                tag "Internal Service"
+            }
         }
 
         customer = person "Analytics User" "A person who accesses the TAP" "Customer"
@@ -36,16 +50,16 @@ workspace "Imanai TAP" "Trading Analytics Portal" {
         marketDataSource = softwaresystem "Market Data Source" "An external system that supplies real-time and historical market data." "External System"
 
         group "Imanai TAP" {
-            dataManager = person "Data Manager" "A person who manage actual data info (updates instruments meta etc)" "Staff"
+            dataManager = person "Data Manager" "A person who manage actual data info" "Staff"
 
-            metaDataSystem = softwaresystem "Meta Data System" "" {
-                !adrs meta-data-system/adr
-                !docs meta-data-system/docs
+            referenceDataSystem = softwaresystem "Reference Data System" "" {
+                !adrs reference-data-system/adr
+                !docs reference-data-system/docs
 
-                instrumentRegistry = container "Instrument Registry" "Provide instrument meta data" "Spring Boot App" "Public Service"
-                instrumentRegistryDB = container "Instrument Registry DB" "" "PostgreSQL" "Database, Internal Service"
-                instrumentRegistryCache = container "Instrument Registry Cache" "" "Redis" "Cache, Internal Service"
-                instrumentRegistryUpdater = container "Instrument Registry Updater" "Updates data automatically" "Spring Boot App" "Internal Service"                
+                instrumentRegistry = publicApi "Instrument Registry" "Provide instrument reference data"
+                instrumentRegistryDB = datasource "Instrument Registry DB" "" "PostgreSQL" "Database"
+                instrumentRegistryCache = datasource "Instrument Registry Cache" "" "Redis" "Cache"
+                instrumentRegistryUpdater = privateApi "Instrument Registry Updater" "Updates data automatically"
             }
 
             marketDataSystem = softwaresystem  "Market Data System" "Provide market data streams (live, replay, transformed, combined)" {
@@ -53,18 +67,18 @@ workspace "Imanai TAP" "Trading Analytics Portal" {
                 !docs market-data-system/docs
 
                 group "Live Data flow" {
-                    feedAdaptor = container "Feed Adaptor" "Provider-specific adaptor (operates with messages)" "Spring Boot App" "Internal Service"
-                    feedIngestor = container "Feed Ingestor" "Operates with provider agnostic messages and combines it into streams (data quality gate)" "Spring Boot App" "Internal Service"
+                    feedAdaptor = privateApi "Feed Adaptor" "Provider-specific adaptor (operates with messages)"
+                    feedIngestor = privateApi "Feed Ingestor" "Operates with provider agnostic messages and combines it into streams (data quality gate)"
                 }
 
                 group "Historical Data Flow" {
-                    historicalDataLoader = container "Historical Data Loader" "Provider-specific loader/adaptor" "Spring Boot App" "Internal Service"
-                    historicalDataService = container "Historical Data Service" "Operate with collected immutable market data" "Spring Boot App" "Internal Service"
-                    historicalDataStore = container "Historical Data Store" "Immutable finalized data" "S3 / Parquet / ClickHouse" "Database,Internal Service"
+                    historicalDataLoader = privateApi "Historical Data Loader" "Provider-specific loader/adaptor" "Spring Boot App" "Internal Service"
+                    historicalDataService = privateApi "Historical Data Service" "Operate with collected immutable market data" "Spring Boot App" "Internal Service"
+                    historicalDataStore = datasource "Historical Data Store" "Immutable finalized data" "S3 / Parquet / ClickHouse" "Database"
                 }
 
-                streamConfigurtaionStore = container "Stream Configuration Store" "User-specific stream configuration store" "" "Database,Internal Service"                
-                unifiedStreamProvider = container "Unified Stream Provider" "Combines live/historical data to live/replay streams" "Spring Boot App" "Public Service"
+                streamConfigurtaionStore = datasource "Stream Configuration Store" "User-specific stream configuration store" "" "Database"
+                unifiedStreamProvider = publicApi "Unified Stream Provider" "Combines live/historical data to live/replay streams"
             }
 
             visualizationSystem = softwaresystem "Visualization" {
@@ -72,10 +86,6 @@ workspace "Imanai TAP" "Trading Analytics Portal" {
             }
 
             administrationSystem = softwaresystem "Administration System" "System administartion (users, instruments, ...)" {
-
-            }
-
-            userDataSystem = softwaresystem "User Data System" {
 
             }
 
@@ -96,7 +106,6 @@ workspace "Imanai TAP" "Trading Analytics Portal" {
             Смотри на симметрию: если один компонент “Sends”, другой должен “Receives/Consumes”.        
         */
 
-        // Platform
         customer -> visualizationSystem "Works with"
         dataManager -> administrationSystem "Works with"
 
@@ -108,8 +117,6 @@ workspace "Imanai TAP" "Trading Analytics Portal" {
         strategyEngine -> unifiedStreamProvider "Uses"
         marketDataSystem -> instrumentRegistry "Uses"
         marketDataSystem -> marketDataSource "Uses"
-        strategyEngine -> userDataSystem "Uses"
-        visualizationSystem -> userDataSystem "Uses"
 
         feedAdaptor --websocket-> marketDataSource "Handles feed"    
         historicalDataLoader -> marketDataSource "Requests historical data for instruments"
@@ -177,7 +184,7 @@ workspace "Imanai TAP" "Trading Analytics Portal" {
             include *
         }
 
-        container metaDataSystem "MetaDSContainers" {
+        container referenceDataSystem "ReferenceDSContainers" {
             include *
         }
 

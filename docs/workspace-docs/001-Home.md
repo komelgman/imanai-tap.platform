@@ -32,7 +32,7 @@
 
 - [ ] Заглушка API выдающая предустановленные данные, минимум функциональности, до более полного сбора требований.
 
-![](/pictures/structurizr-1-MetaDSContainers.png)
+![](/pictures/structurizr-1-ReferenceDSContainers.png)
 
 ### Market Data System
 
